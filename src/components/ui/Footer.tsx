@@ -31,14 +31,12 @@ export function Footer() {
             <h4 className="text-sm font-medium mb-4 uppercase tracking-wider text-gray-400">
               Get Started
             </h4>
-            <a
-              href="https://teams-intro.lovable.app/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/request-intro"
               className="inline-block bg-accent hover:bg-accent-hover text-white px-5 py-2 rounded-full text-sm font-medium transition-colors"
             >
-              Request an Intro
-            </a>
+              Get Connected
+            </Link>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-gray-500">

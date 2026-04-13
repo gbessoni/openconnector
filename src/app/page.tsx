@@ -19,14 +19,12 @@ export default function HomePage() {
         title="Skip the research. Get directly connected to the right team."
         subtitle="I work with a small group of high-performing companies across finance, growth, and operations. If there's a strong fit, I'll make a direct intro."
       >
-        <a
-          href="https://teams-intro.lovable.app/"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/request-intro"
           className="inline-block bg-accent hover:bg-accent-hover text-white px-8 py-4 rounded-full font-medium transition-colors"
         >
-          Request an Intro
-        </a>
+          Get Connected
+        </Link>
       </Hero>
 
       <StatsBar

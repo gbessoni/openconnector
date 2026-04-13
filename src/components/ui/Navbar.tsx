@@ -17,14 +17,12 @@ export function Navbar() {
           <Link href="/about" className="hover:text-accent transition-colors">
             About
           </Link>
-          <a
-            href="https://teams-intro.lovable.app/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/request-intro"
             className="bg-accent hover:bg-accent-hover text-white px-5 py-2 rounded-full text-sm font-medium transition-colors"
           >
-            Request an Intro
-          </a>
+            Get Connected
+          </Link>
         </div>
       </div>
     </nav>

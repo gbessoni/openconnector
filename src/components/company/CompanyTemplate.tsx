@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { CompanyCard } from "@/components/ui/CompanyCard";
 import { IntroRequestCTA } from "@/components/ui/IntroRequestCTA";
@@ -26,14 +27,12 @@ export function CompanyTemplate({ company }: CompanyTemplateProps) {
           <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-80 mb-8">
             {company.tagline}
           </p>
-          <a
-            href={`https://teams-intro.lovable.app/?company=${company.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={`/request-intro?company=${company.slug}`}
             className="inline-block bg-accent hover:bg-accent-hover text-white px-8 py-4 rounded-full font-medium transition-colors"
           >
-            Request an Intro
-          </a>
+            Get Connected
+          </Link>
         </div>
       </section>
 
