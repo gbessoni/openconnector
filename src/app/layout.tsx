@@ -17,8 +17,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Superconnector | Skip the research. Get directly connected.",
-    template: "%s | Superconnector",
+    default: "OpenConnector | Skip the research. Get directly connected.",
+    template: "%s | OpenConnector",
   },
   description:
     "I work with a small group of high-performing companies across finance, growth, and operations. If there's a strong fit, I'll make a direct intro.",

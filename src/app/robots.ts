@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://superconnector.com/sitemap.xml",
+    sitemap: "https://openconnector.com/sitemap.xml",
   };
 }

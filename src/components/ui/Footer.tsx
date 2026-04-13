@@ -6,7 +6,7 @@ export function Footer() {
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div>
-            <h3 className="font-serif text-xl mb-4">Superconnector</h3>
+            <h3 className="font-serif text-xl mb-4">OpenConnector</h3>
             <p className="text-sm text-gray-400 leading-relaxed">
               Skip the research. Get directly connected to the right team.
             </p>
@@ -42,7 +42,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Superconnector. All rights reserved.
+          &copy; {new Date().getFullYear()} OpenConnector. All rights reserved.
         </div>
       </div>
     </footer>

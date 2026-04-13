@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllCompanies, getCategoriesFromCompanies } from "@/lib/companies";
 import { getAllBlogPosts } from "@/lib/mdx";
 
-const BASE_URL = "https://superconnector.com";
+const BASE_URL = "https://openconnector.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const companies = getAllCompanies();
