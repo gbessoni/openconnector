@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral Network — Make One Intro. Pocket Up to $1,125.</title>
+  <meta name="description" content="Join the referral network. Send warm intros to vetted vendors and earn 30% of every payout.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg-card: #111111;
+      --bg-card-hover: #1a1a1a;
+      --text: #f5f5f5;
+      --text-muted: #888888;
+      --accent: #00ff88;
+      --accent-dim: rgba(0, 255, 136, 0.1);
+      --accent-glow: rgba(0, 255, 136, 0.15);
+      --border: #222222;
+      --radius: 12px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 24px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid var(--accent);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      max-width: 700px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin-bottom: 40px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      padding: 16px 40px;
+      background: var(--accent);
+      color: #0a0a0a;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-muted);
+      font-size: 13px;
+      opacity: 0.5;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    /* ─── Section shared ─── */
+    section {
+      padding: 100px 24px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 48px;
+    }
+
+    /* ─── How It Works ─── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .step h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Payout Table ─── */
+    .payout-section {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .payout-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .payout-table thead th {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .payout-table tbody td {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    .payout-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .payout-table tbody tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .payout-amount {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .payout-note {
+      margin-top: 24px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Form ─── */
+    .form-section {
+      background: var(--bg);
+    }
+
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .submit-btn {
+      margin-top: 24px;
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #0a0a0a;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .form-footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Success State ─── */
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .success-message.visible {
+      display: block;
+    }
+
+    .success-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    .success-message h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .success-message p {
+      color: var(--text-muted);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* ─── Bottom CTA ─── */
+    .bottom-cta {
+      text-align: center;
+      padding-bottom: 120px;
+    }
+
+    .bottom-cta p {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .bottom-cta .subtext {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-card {
+        padding: 32px 24px;
+      }
+
+      .payout-table thead th,
+      .payout-table tbody td {
+        padding: 14px 12px;
+        font-size: 0.85rem;
+      }
+
+      section {
+        padding: 72px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero {
+        padding: 48px 20px;
+      }
+
+      .payout-table {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <span class="badge">Referral Network</span>
+    <h1>make one intro.<br><span>pocket up to $1,125.</span></h1>
+    <p>You know the right people. I work with vetted vendors who pay for warm introductions. Send a lead, I close it, you get 30%.</p>
+    <a href="#apply" class="cta-btn">Apply to Join</a>
+    <div class="scroll-hint">↓ scroll to see payouts</div>
+  </div>
+
+  <!-- How It Works -->
+  <section>
+    <div class="container">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">Three steps. Zero cold outreach.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>You spot a fit</h3>
+          <p>A founder, exec, or operator in your network has a problem one of our vendors solves.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>You send the intro</h3>
+          <p>Submit their info through our form. I handle the outreach and qualification from there.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>You get paid</h3>
+          <p>If the lead closes, you receive 30% of whatever the vendor pays me. Paid within 30 days of close.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payout Table -->
+  <section class="payout-section">
+    <div class="container">
+      <div class="section-label">What You Earn</div>
+      <h2 class="section-title">Real numbers. No guessing.</h2>
+      <table class="payout-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>You Earn Per Intro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fund Administration</td>
+            <td class="payout-amount">up to $1,125</td>
+          </tr>
+          <tr>
+            <td>Employee Benefits</td>
+            <td class="payout-amount">up to $900</td>
+          </tr>
+          <tr>
+            <td>Global Payroll</td>
+            <td class="payout-amount">up to $450</td>
+          </tr>
+          <tr>
+            <td>Banking & Finance</td>
+            <td class="payout-amount">up to $225</td>
+          </tr>
+          <tr>
+            <td>Recruiting & Hiring</td>
+            <td class="payout-amount">up to $174</td>
+          </tr>
+          <tr>
+            <td>Legal & Compliance</td>
+            <td class="payout-amount">up to $135</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="payout-note">Specific vendor and payout confirmed after you submit a lead. Paid within 30 days of close.</p>
+    </div>
+  </section>
+
+  <!-- Application Form -->
+  <section class="form-section" id="apply">
+    <div class="container">
+      <div class="section-label">Join the Network</div>
+      <h2 class="section-title">Apply in 60 seconds.</h2>
+
+      <div class="form-card">
+        <form id="referral-form" action="/api/referral-apply" method="POST">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name">Full Name *</label>
+              <input type="text" id="name" name="name" required placeholder="Jane Smith">
+            </div>
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" required placeholder="jane@company.com">
+            </div>
+            <div class="form-group">
+              <label for="linkedin">LinkedIn Profile *</label>
+              <input type="url" id="linkedin" name="linkedin" required placeholder="https://linkedin.com/in/janesmith">
+            </div>
+            <div class="form-group">
+              <label for="industry">Industry Focus</label>
+              <select id="industry" name="industry">
+                <option value="">Select one...</option>
+                <option value="Banking & Finance">Banking & Finance</option>
+                <option value="HR & Benefits">HR & Benefits</option>
+                <option value="Marketing & Growth">Marketing & Growth</option>
+                <option value="Logistics & Ops">Logistics & Ops</option>
+                <option value="AI & Data">AI & Data</option>
+                <option value="Ecommerce">Ecommerce</option>
+                <option value="Multiple / General">Multiple / General</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label for="network">Describe your network in 1-2 sentences *</label>
+              <textarea id="network" name="network" required placeholder="I work with Series A-C founders in fintech and have strong connections to CFOs at mid-market companies..."></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label for="referral">How did you hear about us?</label>
+              <input type="text" id="referral" name="referral" placeholder="LinkedIn, a friend, etc.">
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" id="submit-btn">Apply to Join</button>
+          <p class="form-footer">I review every application personally. You'll hear back within 48 hours.</p>
+        </form>
+
+        <div class="success-message" id="success-message">
+          <div class="success-icon">✓</div>
+          <h3>You're in the queue.</h3>
+          <p>I review every application personally. If it's a fit, you'll hear from me within 48 hours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="bottom-cta">
+    <div class="container">
+      <p>Your network is worth more than you think.</p>
+      <div class="subtext">One intro. That's all it takes.</div>
+      <a href="#apply" class="cta-btn">Apply to Join</a>
+    </div>
+  </section>
+
+  <script>
+    const form = document.getElementById('referral-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const successMsg = document.getElementById('success-message');
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      const data = {
+        name: form.name.value,
+        email: form.email.value,
+        linkedin: form.linkedin.value,
+        industry: form.industry.value,
+        network: form.network.value,
+        referral: form.referral.value,
+      };
+
+      try {
+        const res = await fetch('/api/referral-apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (res.ok) {
+          form.style.display = 'none';
+          successMsg.classList.add('visible');
+        } else {
+          throw new Error('Submission failed');
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Apply to Join';
+        alert('Something went wrong. Please try again.');
+      }
+    });
+  </script>
+
+</body>
+</html>
