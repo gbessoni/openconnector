@@ -25,6 +25,9 @@ export function Footer() {
               <Link href="/about" className="hover:text-accent transition-colors">
                 About
               </Link>
+              <Link href="/referral_connector.html" className="hover:text-accent transition-colors">
+                Referral Partner
+              </Link>
             </div>
           </div>
           <div>
