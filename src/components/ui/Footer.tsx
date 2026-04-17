@@ -19,8 +19,8 @@ export function Footer() {
               <Link href="/companies" className="hover:text-accent transition-colors">
                 Companies
               </Link>
-              <Link href="/blog" className="hover:text-accent transition-colors">
-                Blog
+              <Link href="/resources" className="hover:text-accent transition-colors">
+                Resources
               </Link>
               <Link href="/about" className="hover:text-accent transition-colors">
                 About

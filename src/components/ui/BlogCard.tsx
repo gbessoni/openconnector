@@ -11,7 +11,7 @@ interface BlogCardProps {
 export function BlogCard({ slug, title, excerpt, date, category }: BlogCardProps) {
   return (
     <Link
-      href={`/blog/${slug}`}
+      href={`/resources/${slug}`}
       className="block bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow group"
     >
       {category && (

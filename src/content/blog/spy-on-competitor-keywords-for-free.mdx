@@ -1,0 +1,150 @@
+---
+title: "How to Spy on Your Competitors' Keywords for Free"
+date: "2026-04-17"
+excerpt: "SpyFu and SEMrush are giving you guesses. Here's how to get Google's actual keyword data — straight from the source, for $0."
+category: "SEO & Growth"
+---
+
+**And why SpyFu and SEMrush are giving you guesses**
+
+## The Problem With the Tools Everyone Uses
+
+SpyFu costs $39/month. SEMrush starts at $140/month. Ahrefs is $129/month.
+
+They're all selling you the same thing: estimated keyword data scraped from the SERPs. They sample a subset of queries, model the rest with statistics, and present it as truth.
+
+That's fine for a rough read. But when you're making bidding decisions — deciding to spend $500 or $5,000/month on a campaign — you're steering with data that's:
+
+- **Sampled**, not complete
+- **Estimated**, not measured
+- Often **30–90 days stale**
+- **Missing real CPC auction data**
+
+There's a better way. And it's free.
+
+## The Method: Google's Own Data, Through the Side Door
+
+Google has the keyword data. Of course they do — they run the auction. The search volumes, the real CPCs advertisers pay, the competition levels — Google knows all of it.
+
+They give it to you in **Keyword Planner**, a free tool inside every Google Ads account.
+
+Most people use Keyword Planner one way: type in a seed keyword, get a list back. That's useful, but it's not the unlock.
+
+**The unlock is the URL seed feature.**
+
+You can feed Google Keyword Planner a competitor's URL. Google will return every keyword it associates with that page, complete with:
+
+- **Monthly search volume** (real, not estimated)
+- **Competition level** (LOW / MEDIUM / HIGH)
+- **Low-end and high-end CPC bids** (what advertisers actually pay)
+- **12 months of historical trend data**
+
+This is the exact same data Google uses to build their own targeting recommendations. It's not a scrape. It's not a model. It's the source.
+
+## Why This Is Better Than SpyFu
+
+SpyFu tells you: *"competitor.com ranks for these keywords."*
+
+Google Keyword Planner URL seed tells you: *"here's what Google thinks competitor.com is about, ranked by real search volume, with real CPCs."*
+
+The difference:
+
+- **SpyFu** reverse-engineers what they observe. Limited crawl budget, limited sample.
+- **Keyword Planner** tells you what Google itself would match that URL to in the auction.
+
+One is a guess from the outside. The other is Google's actual opinion from the inside.
+
+## Real Example
+
+I ran this on two direct competitors in the airport parking space. Both charge real money to subscribe to SpyFu. Both would show up in any SEMrush export.
+
+**Seed URL 1:** a large aggregator. 1,910 keywords returned. Top result: a 27,100/mo volume keyword I hadn't seen anywhere else, at $1.75 CPC.
+
+**Seed URL 2:** a different aggregator. 2,089 keywords returned. Different keyword distribution.
+
+Then I did the thing no SEO tool does: **I intersected the two lists.** 17 keywords appeared on both — meaning they're the keywords that both competitors independently decided were worth targeting.
+
+Those 17 keywords are gold. They're:
+
+- **High volume** enough to justify two different companies building pages for them
+- **Moderate CPC** (both companies find them affordable)
+- **Proven** by two independent signals
+
+That's not data you get from SpyFu. That's a strategy.
+
+## How to Do It Yourself
+
+You need three things:
+
+1. A Google Ads account (free)
+2. A developer token (free, instant for read-only on your own account)
+3. Python or basic scripting ability
+
+**Steps:**
+
+1. Create a Google Ads account at [ads.google.com](https://ads.google.com). Don't spend a dime.
+2. Go to **Tools → API Center**. Apply for a developer token. Even the "test" level works for Keyword Planner.
+3. Generate OAuth credentials in Google Cloud Console (Desktop app type).
+4. Install the Google Ads Python library: `pip install google-ads`
+5. Use the `KeywordPlanIdeaService.generate_keyword_ideas` endpoint with `url_seed` instead of `keyword_seed`.
+
+**Sample request:**
+
+```python
+request = client.get_type("GenerateKeywordIdeasRequest")
+request.customer_id = "YOUR_ACCOUNT_ID"
+request.url_seed.url = "https://competitor.com/"
+request.geo_target_constants.append(
+    client.get_service("GoogleAdsService")
+        .geo_target_constant_path("2840")
+)
+request.language = client.get_service("GoogleAdsService") \
+    .language_constant_path("1000")
+request.keyword_plan_network = (
+    client.enums.KeywordPlanNetworkEnum
+        .GOOGLE_SEARCH_AND_PARTNERS
+)
+
+response = service.generate_keyword_ideas(
+    request=request
+)
+```
+
+Response gives you everything. Dump to CSV and start analyzing.
+
+## The Three Moves That Compound
+
+Once you have this pipeline, three moves compound into real advantage.
+
+### Move 1: Single-competitor seed
+
+Feed one competitor URL, get their keyword universe. Find head terms they rank for that you don't. Build pages.
+
+### Move 2: Intersection analysis
+
+Run the URL seed on 2–3 competitors. Intersect the results. The overlap is your "proven keyword" set — if multiple competitors independently targeted these, the commercial intent is real.
+
+### Move 3: CPC tier filtering
+
+Keyword Planner returns low/high CPC. Filter to keywords where high CPC is below your breakeven. If your gross profit per conversion is $15 and your expected CVR is 5%, your max CPC is $0.75. Keyword Planner lets you filter the entire universe to just keywords in that zone.
+
+That last move is what paid tools can't do. They give you keywords, but not the economic filter to tell you which ones are profitable for *your* business.
+
+## The Bigger Idea
+
+Every SaaS tool in the marketing stack is a wrapper around data someone else owns.
+
+SpyFu wraps Google's SERPs. SEMrush wraps SEO crawlers. Ahrefs wraps a backlink index they built.
+
+If you're willing to spend two hours understanding how the underlying APIs work, you can often get:
+
+- **Better data** (straight from source)
+- **Fresher data** (real-time vs. cached)
+- **Customized analyses** (your intersection logic, your filters)
+- **For zero dollars**
+
+The tools aren't scams. They're time-savers. But the magic happens when you realize you can skip the middleman and go straight to the primary data.
+
+Google Keyword Planner + URL seed is one example. But once you see the pattern, you start noticing it everywhere.
+
+*If this was useful, I'd love to hear what other "hidden API" patterns you've found.*
