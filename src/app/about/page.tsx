@@ -7,7 +7,7 @@ import { getAllCompanies, getCategoriesFromCompanies } from "@/lib/companies";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "I only recommend companies I've seen work. Learn about how OpenConnector operates.",
+    "I only recommend companies I've seen work. Learn about how Leapify operates.",
 };
 
 export default function AboutPage() {
@@ -18,7 +18,7 @@ export default function AboutPage() {
     <>
       <Hero
         title="I only recommend companies I've seen work."
-        subtitle="OpenConnector is a curated referral network. No ads, no sponsorships, no pay-to-play."
+        subtitle="Leapify is your trusted connector to the products and services that actually work. We do the deep dives so you don't have to."
       />
 
       <section className="bg-bg-light py-20">

@@ -5,7 +5,7 @@ export function Navbar() {
     <nav className="bg-bg-dark text-text-light">
       <div className="mx-auto max-w-[1200px] px-6 py-4 flex items-center justify-between">
         <Link href="/" className="font-serif text-2xl tracking-tight">
-          OpenConnector
+          Leapify
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm">
           <Link href="/companies" className="hover:text-accent transition-colors">

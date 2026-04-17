@@ -17,11 +17,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "OpenConnector | Skip the research. Get directly connected.",
-    template: "%s | OpenConnector",
+    default: "Leapify | The trusted connector for the products and services that actually work.",
+    template: "%s | Leapify",
   },
   description:
-    "I work with a small group of high-performing companies across finance, growth, and operations. If there's a strong fit, I'll make a direct intro.",
+    "We do the deep dives so you don't have to. Leapify connects buyers with vetted products and services through a trusted partner who knows the right people.",
 };
 
 export default function RootLayout({

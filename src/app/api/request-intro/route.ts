@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const resend = new Resend(resendKey);
     await resend.emails.send({
-      from: "OpenConnector <onboarding@resend.dev>",
+      from: "Leapify <onboarding@resend.dev>",
       to: notificationEmail,
       subject: `New intro request from ${name} at ${company}`,
       html: `

@@ -75,7 +75,7 @@ export function CompanyTemplate({ company }: CompanyTemplateProps) {
                 </p>
               )}
               <p className="text-sm text-gray-500 mt-1">
-                Greg Bessoni, OpenConnector
+                Greg Bessoni, Leapify
               </p>
             </div>
           </div>
