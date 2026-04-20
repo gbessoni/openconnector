@@ -24,9 +24,17 @@ const ALLOWED_HEADERS = [
   "owner_email",
 ];
 
-export function ImportForm({ users }: { users: User[] }) {
+export function ImportForm({
+  users,
+  isAdmin,
+}: {
+  users: User[];
+  isAdmin: boolean;
+}) {
   const [csv, setCsv] = useState("");
-  const [defaultOwnerId, setDefaultOwnerId] = useState<number>(users[0]?.id ?? 0);
+  const [defaultOwnerId, setDefaultOwnerId] = useState<number>(
+    users[0]?.id ?? 0
+  );
   const [parsed, setParsed] = useState<Record<string, string>[] | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -54,9 +62,7 @@ export function ImportForm({ users }: { users: User[] }) {
     const rawHeaders = splitCSVLine(lines[0]).map((h) =>
       h.trim().toLowerCase().replace(/\s+/g, "_")
     );
-    const unknown = rawHeaders.filter(
-      (h) => h && !ALLOWED_HEADERS.includes(h)
-    );
+    const unknown = rawHeaders.filter((h) => h && !ALLOWED_HEADERS.includes(h));
     if (unknown.length) {
       setError(
         `Unknown columns: ${unknown.join(", ")}. Allowed: ${ALLOWED_HEADERS.join(", ")}`
@@ -68,14 +74,17 @@ export function ImportForm({ users }: { users: User[] }) {
       return;
     }
 
-    const rows = lines.slice(1).map((line) => {
-      const cells = splitCSVLine(line);
-      const row: Record<string, string> = {};
-      rawHeaders.forEach((h, i) => {
-        row[h] = (cells[i] ?? "").trim();
-      });
-      return row;
-    }).filter((r) => r.lead_name && r.company);
+    const rows = lines
+      .slice(1)
+      .map((line) => {
+        const cells = splitCSVLine(line);
+        const row: Record<string, string> = {};
+        rawHeaders.forEach((h, i) => {
+          row[h] = (cells[i] ?? "").trim();
+        });
+        return row;
+      })
+      .filter((r) => r.lead_name && r.company);
 
     setHeaders(rawHeaders);
     setParsed(rows);
@@ -86,8 +95,14 @@ export function ImportForm({ users }: { users: User[] }) {
     setError(null);
     setResult(null);
     setLoading(true);
+
+    // For connectors, strip owner_email so the API forces their own id
+    const cleaned = isAdmin
+      ? parsed
+      : parsed.map(({ owner_email: _, ...rest }) => rest);
+
     const fd = new FormData();
-    fd.set("rows", JSON.stringify(parsed));
+    fd.set("rows", JSON.stringify(cleaned));
     fd.set("default_owner_id", String(defaultOwnerId));
     const res = await bulkImportLeadsAction(fd);
     setLoading(false);
@@ -106,25 +121,39 @@ export function ImportForm({ users }: { users: User[] }) {
     <div className="space-y-5">
       {/* Owner + file */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Default owner
-          </label>
-          <select
-            value={defaultOwnerId}
-            onChange={(e) => setDefaultOwnerId(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-          >
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.email})
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Used for rows without an owner_email column.
-          </p>
-        </div>
+        {isAdmin ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Default owner
+            </label>
+            <select
+              value={defaultOwnerId}
+              onChange={(e) => setDefaultOwnerId(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Used for rows without an owner_email column.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Owner
+            </label>
+            <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700">
+              {users[0]?.name} ({users[0]?.email})
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              All imported leads will be assigned to you.
+            </p>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Upload CSV

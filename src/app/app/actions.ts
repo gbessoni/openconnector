@@ -162,10 +162,13 @@ const ALLOWED_STATUSES = [
 export async function bulkImportLeadsAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/app/login");
-  if (session.role !== "admin") return { error: "Admin only" };
 
+  const isAdmin = session.role === "admin";
   const rowsJson = String(formData.get("rows") || "");
-  const defaultOwnerId = Number(formData.get("default_owner_id"));
+  // Non-admins always import to themselves
+  const defaultOwnerId = isAdmin
+    ? Number(formData.get("default_owner_id"))
+    : session.id;
   if (!defaultOwnerId) return { error: "Default owner required" };
 
   let rows: Record<string, string>[];
@@ -196,10 +199,13 @@ export async function bulkImportLeadsAction(formData: FormData) {
     }
 
     let ownerId = defaultOwnerId;
-    const ownerEmail = (row.owner_email || "").trim().toLowerCase();
-    if (ownerEmail) {
-      const matched = emailToId.get(ownerEmail);
-      if (matched) ownerId = matched;
+    // Only admins can assign leads to other users via owner_email
+    if (isAdmin) {
+      const ownerEmail = (row.owner_email || "").trim().toLowerCase();
+      if (ownerEmail) {
+        const matched = emailToId.get(ownerEmail);
+        if (matched) ownerId = matched;
+      }
     }
 
     const status = ALLOWED_STATUSES.includes(row.status)

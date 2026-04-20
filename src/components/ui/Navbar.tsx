@@ -27,6 +27,12 @@ export function Navbar() {
             Referral Partner
           </Link>
           <Link
+            href="/app/login"
+            className="hover:text-accent transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
             href="/request-intro"
             className="bg-accent hover:bg-accent-hover text-white px-5 py-2 rounded-full text-sm font-medium transition-colors"
           >
