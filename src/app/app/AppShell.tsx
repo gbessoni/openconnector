@@ -18,6 +18,7 @@ export function AppShell({
 
   const navItems = [
     { href: "/app", label: "My Leads", icon: "📋" },
+    { href: "/app/companies", label: "Companies", icon: "🏢" },
     { href: "/app/leads/new", label: "Add Lead", icon: "＋" },
   ];
   if (user.role === "admin") {

@@ -46,6 +46,33 @@ export interface Lead {
   updated_at: string;
 }
 
+export interface Vendor {
+  id: number;
+  slug: string;
+  name: string;
+  target_industries: string | null;
+  category: string | null;
+  payout_text: string | null;
+  payout_amount: number | string | null;
+  commission_text: string | null;
+  description: string | null;
+  icp: string | null;
+  email: string | null;
+  website: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function formatPayout(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return "—";
+  const n = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (Number.isNaN(n)) return "—";
+  // Strip .00 if whole number
+  if (n % 1 === 0) return `$${n.toLocaleString()}`;
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export interface LeadEvent {
   id: number;
   lead_id: number;

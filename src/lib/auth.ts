@@ -17,6 +17,7 @@ export interface SessionUser {
   email: string;
   name: string;
   role: "admin" | "connector" | "reviewer";
+  commission_rate: number;
 }
 
 export async function hashPassword(pw: string): Promise<string> {
@@ -56,6 +57,8 @@ export async function getSession(): Promise<SessionUser | null> {
       email: payload.email as string,
       name: payload.name as string,
       role: payload.role as SessionUser["role"],
+      commission_rate:
+        typeof payload.commission_rate === "number" ? payload.commission_rate : 0.3,
     };
   } catch {
     return null;
@@ -73,6 +76,7 @@ interface UserRow {
   password_hash: string;
   name: string;
   role: "admin" | "connector" | "reviewer";
+  commission_rate: string | number;
 }
 
 export async function authenticate(
@@ -80,7 +84,7 @@ export async function authenticate(
   password: string
 ): Promise<SessionUser | null> {
   const user = await queryOne<UserRow>(
-    "SELECT id, email, password_hash, name, role FROM users WHERE lower(email) = lower($1)",
+    "SELECT id, email, password_hash, name, role, commission_rate FROM users WHERE lower(email) = lower($1)",
     [email]
   );
   if (!user) return null;
@@ -91,6 +95,7 @@ export async function authenticate(
     email: user.email,
     name: user.name,
     role: user.role,
+    commission_rate: Number(user.commission_rate) || 0.3,
   };
 }
 
@@ -102,9 +107,15 @@ export async function createUser(
 ): Promise<SessionUser> {
   const hash = await hashPassword(password);
   const user = await queryOne<UserRow>(
-    "INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, password_hash, name, role",
+    "INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, password_hash, name, role, commission_rate",
     [email.toLowerCase(), hash, name, role]
   );
   if (!user) throw new Error("Failed to create user");
-  return { id: user.id, email: user.email, name: user.name, role: user.role };
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    commission_rate: Number(user.commission_rate) || 0.3,
+  };
 }

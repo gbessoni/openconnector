@@ -4,12 +4,14 @@ import { getSession } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { AppShell } from "../AppShell";
 import { getStatusMeta, type Lead } from "@/lib/leads";
+import { CommissionRateInput } from "./CommissionRateInput";
 
 interface UserRow {
   id: number;
   name: string;
   email: string;
   role: string;
+  commission_rate: string | number;
   created_at: string;
   lead_count: number;
 }
@@ -25,7 +27,7 @@ export default async function AdminPage() {
   if (session.role !== "admin") redirect("/app");
 
   const users = await query<UserRow>(
-    `SELECT u.id, u.name, u.email, u.role, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.commission_rate, u.created_at,
             (SELECT COUNT(*) FROM leads WHERE owner_id = u.id)::int AS lead_count
      FROM users u
      ORDER BY u.created_at DESC`
@@ -86,6 +88,7 @@ export default async function AdminPage() {
                     <th className="text-left px-6 py-3 font-medium">Name</th>
                     <th className="text-left px-6 py-3 font-medium">Email</th>
                     <th className="text-left px-6 py-3 font-medium">Role</th>
+                    <th className="text-left px-6 py-3 font-medium">Commission %</th>
                     <th className="text-left px-6 py-3 font-medium">Leads</th>
                     <th className="text-left px-6 py-3 font-medium">Joined</th>
                   </tr>
@@ -107,6 +110,16 @@ export default async function AdminPage() {
                         >
                           {u.role}
                         </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        {u.role === "admin" ? (
+                          <span className="text-gray-400 text-xs">—</span>
+                        ) : (
+                          <CommissionRateInput
+                            userId={u.id}
+                            currentRate={Number(u.commission_rate) || 0.3}
+                          />
+                        )}
                       </td>
                       <td className="px-6 py-3 text-gray-700">{u.lead_count}</td>
                       <td className="px-6 py-3 text-gray-500 text-xs">

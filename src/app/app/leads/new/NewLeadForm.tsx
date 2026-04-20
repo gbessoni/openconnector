@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createLeadAction } from "../../actions";
 
 export function NewLeadForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const prefilledVendor = searchParams.get("vendor") || "";
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -35,7 +38,12 @@ export function NewLeadForm() {
 
       <Section title="Match">
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Vendor" name="vendor" placeholder="e.g. Rho, Ramp, Deel" />
+          <Field
+            label="Vendor"
+            name="vendor"
+            placeholder="e.g. Rho, Ramp, Deel"
+            defaultValue={prefilledVendor}
+          />
           <Field label="Category" name="category" placeholder="e.g. Banking, HR" />
         </div>
         <Textarea
@@ -94,12 +102,14 @@ function Field({
   type = "text",
   required,
   placeholder,
+  defaultValue,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   placeholder?: string;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -111,6 +121,7 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
       />
     </div>

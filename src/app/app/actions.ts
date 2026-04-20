@@ -239,6 +239,28 @@ export async function bulkImportLeadsAction(formData: FormData) {
   return { inserted, skipped };
 }
 
+export async function updateCommissionRateAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const userId = Number(formData.get("user_id"));
+  const rateRaw = Number(formData.get("rate"));
+  if (!userId || Number.isNaN(rateRaw)) return { error: "Invalid input" };
+
+  // Accept either 0.3 or 30 — store as decimal 0-1
+  const rate = rateRaw > 1 ? rateRaw / 100 : rateRaw;
+  if (rate < 0 || rate > 1) return { error: "Rate must be between 0 and 100%" };
+
+  await query(`UPDATE users SET commission_rate = $1 WHERE id = $2`, [
+    rate,
+    userId,
+  ]);
+
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
 export async function addNoteAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/app/login");
