@@ -43,11 +43,19 @@ export default async function AdminPage() {
   return (
     <AppShell user={session}>
       <div className="max-w-7xl mx-auto p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            All connectors, all leads, all activity.
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Admin</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              All connectors, all leads, all activity.
+            </p>
+          </div>
+          <Link
+            href="/app/admin/import"
+            className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            ⬆ Import CSV
+          </Link>
         </div>
 
         {/* Stats */}

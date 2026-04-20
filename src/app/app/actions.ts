@@ -146,6 +146,99 @@ export async function updateLeadStatusAction(formData: FormData) {
   return { success: true };
 }
 
+const ALLOWED_STATUSES = [
+  "submitted",
+  "pending_optin",
+  "vendor_interested",
+  "intro_sent",
+  "meeting_booked",
+  "qualified",
+  "closed_won",
+  "paid",
+  "rejected",
+  "cancelled",
+];
+
+export async function bulkImportLeadsAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const rowsJson = String(formData.get("rows") || "");
+  const defaultOwnerId = Number(formData.get("default_owner_id"));
+  if (!defaultOwnerId) return { error: "Default owner required" };
+
+  let rows: Record<string, string>[];
+  try {
+    rows = JSON.parse(rowsJson);
+  } catch {
+    return { error: "Invalid rows data" };
+  }
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { error: "No rows to import" };
+  }
+
+  // Build email -> user_id lookup
+  const users = await query<{ id: number; email: string }>(
+    "SELECT id, lower(email) AS email FROM users"
+  );
+  const emailToId = new Map(users.map((u) => [u.email, u.id]));
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    const leadName = (row.lead_name || "").trim();
+    const company = (row.company || "").trim();
+    if (!leadName || !company) {
+      skipped++;
+      continue;
+    }
+
+    let ownerId = defaultOwnerId;
+    const ownerEmail = (row.owner_email || "").trim().toLowerCase();
+    if (ownerEmail) {
+      const matched = emailToId.get(ownerEmail);
+      if (matched) ownerId = matched;
+    }
+
+    const status = ALLOWED_STATUSES.includes(row.status)
+      ? row.status
+      : "submitted";
+
+    const inserted_rows = await query<{ id: number }>(
+      `INSERT INTO leads (owner_id, lead_name, lead_email, lead_linkedin, company, company_website, title, vendor, category, why_fit, notes, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+      [
+        ownerId,
+        leadName,
+        row.lead_email || null,
+        row.lead_linkedin || null,
+        company,
+        row.company_website || null,
+        row.title || null,
+        row.vendor || null,
+        row.category || null,
+        row.why_fit || null,
+        row.notes || null,
+        status,
+      ]
+    );
+
+    const leadId = inserted_rows[0]?.id;
+    if (leadId) {
+      await query(
+        `INSERT INTO lead_events (lead_id, actor_id, event_type, to_status, note) VALUES ($1,$2,'created',$3,$4)`,
+        [leadId, session.id, status, `Imported by ${session.name}`]
+      );
+      inserted++;
+    }
+  }
+
+  revalidatePath("/app/admin");
+  return { inserted, skipped };
+}
+
 export async function addNoteAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/app/login");

@@ -22,6 +22,7 @@ export function AppShell({
   ];
   if (user.role === "admin") {
     navItems.push({ href: "/app/admin", label: "Admin", icon: "⚙️" });
+    navItems.push({ href: "/app/admin/import", label: "Import CSV", icon: "⬆" });
   }
 
   return (
