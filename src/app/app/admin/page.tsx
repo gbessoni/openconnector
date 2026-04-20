@@ -52,12 +52,20 @@ export default async function AdminPage() {
               All connectors, all leads, all activity.
             </p>
           </div>
-          <Link
-            href="/app/admin/import"
-            className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-          >
-            ⬆ Import CSV
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/app/admin/messages"
+              className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              💬 Recruit Messages
+            </Link>
+            <Link
+              href="/app/leads/import"
+              className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+            >
+              ⬆ Import CSV
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

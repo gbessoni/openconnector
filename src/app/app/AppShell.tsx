@@ -24,6 +24,7 @@ export function AppShell({
   ];
   if (user.role === "admin") {
     navItems.push({ href: "/app/admin", label: "Admin", icon: "⚙️" });
+    navItems.push({ href: "/app/admin/messages", label: "Recruit Messages", icon: "💬" });
   }
 
   return (
