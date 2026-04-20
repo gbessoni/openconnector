@@ -56,7 +56,11 @@ export interface Vendor {
   payout_amount: number | string | null;
   commission_text: string | null;
   description: string | null;
+  long_description: string | null;
   icp: string | null;
+  icp_bullets: string | null;
+  primary_buyer: string | null;
+  commission_notes: string | null;
   email: string | null;
   website: string | null;
   status: string;

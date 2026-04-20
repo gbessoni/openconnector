@@ -245,6 +245,81 @@ export async function bulkImportLeadsAction(formData: FormData) {
   return { inserted, skipped };
 }
 
+export async function updateVendorAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const id = Number(formData.get("id"));
+  if (!id) return { error: "Missing vendor ID" };
+
+  const get = (k: string) => {
+    const v = formData.get(k);
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    return s === "" ? null : s;
+  };
+  const getNum = (k: string) => {
+    const s = get(k);
+    if (s === null) return null;
+    const n = parseFloat(s);
+    return Number.isNaN(n) ? null : n;
+  };
+
+  const name = get("name");
+  if (!name) return { error: "Name is required" };
+
+  await query(
+    `UPDATE vendors SET
+      name = $1,
+      category = $2,
+      target_industries = $3,
+      description = $4,
+      long_description = $5,
+      icp = $6,
+      icp_bullets = $7,
+      primary_buyer = $8,
+      payout_text = $9,
+      payout_amount = $10,
+      commission_text = $11,
+      commission_notes = $12,
+      email = $13,
+      website = $14,
+      updated_at = NOW()
+     WHERE id = $15`,
+    [
+      name,
+      get("category"),
+      get("target_industries"),
+      get("description"),
+      get("long_description"),
+      get("icp"),
+      get("icp_bullets"),
+      get("primary_buyer"),
+      get("payout_text"),
+      getNum("payout_amount"),
+      get("commission_text"),
+      get("commission_notes"),
+      get("email"),
+      get("website"),
+      id,
+    ]
+  );
+
+  // Fetch the slug to revalidate its page
+  const vendor = await query<{ slug: string }>(
+    `SELECT slug FROM vendors WHERE id = $1`,
+    [id]
+  );
+  if (vendor[0]?.slug) {
+    revalidatePath(`/app/companies/${vendor[0].slug}`);
+    revalidatePath(`/app/admin/vendors/${vendor[0].slug}`);
+  }
+  revalidatePath("/app/companies");
+
+  return { success: true };
+}
+
 export async function updateCommissionRateAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/app/login");
