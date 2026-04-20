@@ -31,16 +31,6 @@ export default async function CompaniesPage() {
             <h1 className="text-2xl font-semibold text-gray-900">Companies</h1>
             <p className="text-sm text-gray-500 mt-1">
               Vetted vendors you can pitch to your network.
-              {!isAdmin && (
-                <>
-                  {" "}
-                  Your cut is{" "}
-                  <span className="font-semibold text-gray-900">
-                    {(rate * 100).toFixed(0)}%
-                  </span>{" "}
-                  of the qualified lead payout.
-                </>
-              )}
             </p>
           </div>
           <div className="text-right">
@@ -96,7 +86,7 @@ export default async function CompaniesPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">
-                      {isAdmin ? "Payout" : "Your cut"}
+                      Qualified Lead Payout
                     </div>
                     <div className="text-sm font-semibold text-green-700">
                       {isAdmin

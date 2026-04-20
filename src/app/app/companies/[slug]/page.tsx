@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { queryOne } from "@/lib/db";
 import { AppShell } from "../../AppShell";
 import { formatPayout, type Vendor } from "@/lib/leads";
+import { PayoutTooltip } from "./PayoutTooltip";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -57,8 +58,11 @@ export default async function CompanyDetailPage({ params }: PageProps) {
               )}
             </div>
             <div className="text-right shrink-0">
-              <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-1">
-                {isAdmin ? "Qualified lead payout" : "Your cut per qualified lead"}
+              <div className="flex items-center gap-1.5 justify-end mb-1">
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-medium">
+                  Qualified Lead Payout
+                </span>
+                <PayoutTooltip />
               </div>
               <div className="text-2xl font-semibold text-green-700">
                 {isAdmin
@@ -67,11 +71,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                   ? `up to ${formatPayout(connectorPayout)}`
                   : "—"}
               </div>
-              {!isAdmin && (
-                <div className="text-[10px] text-gray-400 mt-0.5">
-                  {(rate * 100).toFixed(0)}% commission rate
-                </div>
-              )}
             </div>
           </div>
 
