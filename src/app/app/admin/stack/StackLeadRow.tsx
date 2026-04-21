@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { markIntrosSentAction } from "./actions";
+import { deleteStackLeadAction } from "../actions";
 
 interface StackLead {
   id: number;
@@ -61,6 +62,22 @@ export function StackLeadRow({
       if (!("error" in res)) {
         setStatus("intros_sent");
       }
+    });
+  }
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Delete lead from ${lead.name} at ${lead.company}? This removes the lead and all its activity.`
+      )
+    ) {
+      return;
+    }
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("lead_id", String(lead.id));
+      await deleteStackLeadAction(fd);
     });
   }
 
@@ -244,20 +261,31 @@ export function StackLeadRow({
             </div>
           ) : null}
 
-          {status === "meetings_selected" && (
-            <div className="mt-5 pt-4 border-t border-gray-200 flex items-center gap-3">
-              <button
-                onClick={handleMarkIntrosSent}
-                disabled={pending}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {pending ? "..." : "✓ Mark intros sent"}
-              </button>
-              <span className="text-xs text-gray-500">
-                Click after you&apos;ve emailed the calendar link
-              </span>
-            </div>
-          )}
+          <div className="mt-5 pt-4 border-t border-gray-200 flex items-center justify-between gap-3 flex-wrap">
+            {status === "meetings_selected" ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleMarkIntrosSent}
+                  disabled={pending}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {pending ? "..." : "✓ Mark intros sent"}
+                </button>
+                <span className="text-xs text-gray-500">
+                  Click after you&apos;ve emailed the calendar link
+                </span>
+              </div>
+            ) : (
+              <span />
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={pending}
+              className="text-xs text-red-600 hover:text-red-800 hover:underline transition-colors disabled:opacity-50"
+            >
+              🗑 Delete lead
+            </button>
+          </div>
         </div>
       )}
     </div>

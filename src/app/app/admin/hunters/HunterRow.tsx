@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateHunterStatusAction, updateHunterNotesAction } from "./actions";
+import { deleteHunterAction } from "../actions";
 
 interface Hunter {
   id: number;
@@ -72,6 +73,22 @@ export function HunterRow({ hunter }: { hunter: Hunter }) {
         setNotesSaved("Saved");
         setTimeout(() => setNotesSaved(null), 1500);
       }
+    });
+  }
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Delete Hunter signup for ${hunter.name} (${hunter.email})? This removes the signup record and email history. The linked user account stays — delete that separately if needed.`
+      )
+    ) {
+      return;
+    }
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("hunter_id", String(hunter.id));
+      await deleteHunterAction(fd);
     });
   }
 
@@ -286,6 +303,16 @@ export function HunterRow({ hunter }: { hunter: Hunter }) {
                 <span className="text-xs text-green-600">✓ {notesSaved}</span>
               )}
             </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-gray-100">
+            <button
+              onClick={handleDelete}
+              disabled={pending}
+              className="text-xs text-red-600 hover:text-red-800 hover:underline transition-colors disabled:opacity-50"
+            >
+              🗑 Delete hunter signup
+            </button>
           </div>
         </div>
       )}

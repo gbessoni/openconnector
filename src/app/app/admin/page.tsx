@@ -5,6 +5,7 @@ import { query } from "@/lib/db";
 import { AppShell } from "../AppShell";
 import { getStatusMeta, type Lead } from "@/lib/leads";
 import { CommissionRateInput } from "./CommissionRateInput";
+import { UserRowActions } from "./UserRowActions";
 
 interface UserRow {
   id: number;
@@ -139,6 +140,7 @@ export default async function AdminPage() {
                     <th className="text-left px-6 py-3 font-medium">Commission %</th>
                     <th className="text-left px-6 py-3 font-medium">Leads</th>
                     <th className="text-left px-6 py-3 font-medium">Joined</th>
+                    <th className="text-right px-6 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -172,6 +174,16 @@ export default async function AdminPage() {
                       <td className="px-6 py-3 text-gray-700">{u.lead_count}</td>
                       <td className="px-6 py-3 text-gray-500 text-xs">
                         {new Date(u.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <UserRowActions
+                          userId={u.id}
+                          userName={u.name}
+                          userEmail={u.email}
+                          userRole={u.role}
+                          leadCount={u.lead_count}
+                          currentAdminId={session.id}
+                        />
                       </td>
                     </tr>
                   ))}
