@@ -99,9 +99,9 @@ function Hero({ onCTA }: { onCTA: () => void }) {
               <span className="text-[#00ff88]">$500–$1,500 a week.</span>
             </h1>
             <p className="text-base md:text-lg text-white/70 leading-relaxed mb-8 max-w-lg">
-              Free to join. 30% commission on every closed deal. Real payouts.
-              No cold dialing, no quota, no boss. We give you the network, the
-              vendors, and the pitch — you just make the intros.
+              Free to join. Earn $135–$1,125 on every qualified intro. Real
+              payouts. No cold dialing, no quota, no boss. We give you the
+              network, the vendors, and the pitch — you just make the intros.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
@@ -195,9 +195,9 @@ function Features() {
   const items = [
     {
       icon: "💰",
-      title: "30% commission on every close",
+      title: "$135–$1,125 per qualified intro",
       body:
-        "Payouts range from $135 to $1,125 per intro, paid within 30 days.",
+        "Real cash per closed deal, paid within 30 days. Exact amount shown per vendor inside the app.",
     },
     {
       icon: "🎯",
@@ -269,7 +269,7 @@ function HowItWorks() {
   const steps = [
     { n: "01", title: "Join free", body: "60-second signup. No card required." },
     { n: "02", title: "Hunt leads in the platform", body: "Search, qualify, and pitch using our templates." },
-    { n: "03", title: "Submit intros, get paid", body: "We qualify, we close, you earn 30%." },
+    { n: "03", title: "Submit intros, get paid", body: "We qualify, we close, you get a check." },
   ];
 
   return (
@@ -464,7 +464,7 @@ function Guarantee() {
         </h2>
         <p className="text-base md:text-lg text-white/80 leading-relaxed max-w-xl mx-auto">
           You submit an intro. We close the deal. The vendor pays us.
-          Within 30 days of that payment, you get 30% — direct deposit,
+          Within 30 days of that payment, you get your cut — direct deposit,
           no chasing, no invoicing.
         </p>
       </div>
@@ -479,7 +479,7 @@ function Testimonials() {
   const items = [
     {
       quote:
-        "laid off from my SDR role in march. joined hunter in april, made $3,400 in my first month closing payroll and banking intros. zero cost to get in, 30% of every close.",
+        "laid off from my SDR role in march. joined hunter in april, made $3,400 in my first month closing payroll and banking intros. zero cost to get in, real cash per close.",
       name: "Marcus T.",
       role: "Former SDR",
       initials: "MT",
@@ -545,7 +545,7 @@ function FAQ() {
   const items = [
     {
       q: "Is Hunter really free?",
-      a: "Yes. Signup is free, referring leads from your network is free, and you earn 30% on every closed deal. You only pay if you want to use our premium lead database (an optional in-app upgrade).",
+      a: "Yes. Signup is free, referring leads from your network is free, and you get paid on every closed deal ($135–$1,125 per qualified intro). You only pay if you want to use our premium lead database (an optional in-app upgrade).",
     },
     {
       q: "Do I need sales experience?",
@@ -553,7 +553,7 @@ function FAQ() {
     },
     {
       q: "How do payouts work?",
-      a: "You earn 30% of what the vendor pays us. Paid within 30 days of the deal closing via direct deposit.",
+      a: "You earn a set amount per qualified intro — typically $135 to $1,125, shown per vendor inside the app. Paid within 30 days of the deal closing via direct deposit.",
     },
     {
       q: "What if I don't know anyone in the vendor's ICP?",
@@ -630,7 +630,7 @@ function FinalCTA({ onCTA }: { onCTA: () => void }) {
       <div className="relative max-w-2xl mx-auto text-center">
         <h2 className="text-4xl md:text-6xl font-bold tracking-[-0.025em] leading-[1.05] mb-5">
           Free to join.{" "}
-          <span className="text-[#00ff88]">30% of every close.</span>
+          <span className="text-[#00ff88]">Up to $1,125 per intro.</span>
           <br />
           Unlimited upside.
         </h2>
@@ -930,7 +930,7 @@ function SignupModal({
                   </div>
                   <ul className="text-xs text-white/70 space-y-1.5">
                     <li>✓ Refer leads from your own network, free forever</li>
-                    <li>✓ 30% commission on every closed deal</li>
+                    <li>✓ $135–$1,125 per qualified intro, paid in 30 days</li>
                     <li>✓ Pitch templates + weekly hot list</li>
                     <li>✓ No card required, no quota, no boss</li>
                   </ul>

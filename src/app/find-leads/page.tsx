@@ -104,7 +104,7 @@ export default function FindLeadsHomePage() {
             <li>✓ Unlimited ICP searches</li>
             <li>✓ Pre-written pitch templates for every vendor</li>
             <li>✓ 1 qualified SQL + meeting booked per month, guaranteed</li>
-            <li>✓ 30% commission on every closed deal ($135–$1,125/intro)</li>
+            <li>✓ Real payouts: $135–$1,125 per qualified intro</li>
           </ul>
           <Link
             href="/hunter"

@@ -104,7 +104,7 @@ function welcomeHtml(firstName: string, email: string, tempPassword: string | nu
         <li><strong>Log in</strong> → <a href="${SITE}/app/login" style="color:#00aa5e;font-weight:600">leapify.xyz/app/login</a></li>
         <li><strong>Browse the Companies tab</strong> — 57 vetted vendors, each with their ICP and payout</li>
         <li><strong>Pick 2-3 vendors where you already know the ICP</strong> — that's where your first intros come from</li>
-        <li><strong>Submit an intro</strong> — I handle the rest, you earn 30% when it closes</li>
+        <li><strong>Submit an intro</strong> — I handle the rest, you get paid ($135–$1,125 per qualified intro) when it closes</li>
       </ol>
       <p>Tip: hunters who close in month 1 pick a narrow lane and focus. Don't try to pitch all 57 at once.</p>
       <p style="margin-top:24px"><strong>— Greg</strong></p>

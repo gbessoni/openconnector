@@ -122,7 +122,7 @@ export default async function FindLeadsResultPage({ params }: PageProps) {
             <p className="text-gray-400 mb-6 max-w-xl mx-auto">
               Hunter gets you unlimited ICP searches, pre-written pitch
               templates for every vendor, and 1 qualified lead with a booked
-              meeting — guaranteed. $49/mo. 30% commission on every close.
+              meeting — guaranteed. $135–$1,125 per qualified intro.
             </p>
             <Link
               href="/hunter"
