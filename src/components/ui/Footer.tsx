@@ -8,6 +8,7 @@ export function Footer() {
   if (pathname?.startsWith("/app")) return null;
   if (pathname?.startsWith("/stack")) return null;
   if (pathname?.startsWith("/find-leads")) return null;
+  if (pathname?.startsWith("/hunter")) return null;
 
   return (
     <footer className="bg-bg-dark text-text-light">
