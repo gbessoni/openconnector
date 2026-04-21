@@ -178,7 +178,7 @@ function Pitch() {
     <section className="px-6 py-20 md:py-28 border-y border-white/10 bg-white/[0.02]">
       <div className="max-w-4xl mx-auto text-center">
         <p className="text-2xl md:text-4xl font-semibold tracking-[-0.02em] leading-[1.25]">
-          apollo charges you $49/mo to find cold leads.{" "}
+          most tools charge you to find cold leads.{" "}
           <span className="text-[#00ff88]">
             leapify pays you to close warm ones.
           </span>
@@ -370,7 +370,7 @@ function Calculator({ onCTA }: { onCTA: () => void }) {
               onClick={onCTA}
               className="mt-8 bg-[#00ff88] hover:bg-[#00e67a] text-black px-7 py-3 rounded-full font-semibold text-sm transition-all"
             >
-              start hunting — $49/mo
+              start hunting — free
             </button>
           </div>
         </div>
@@ -641,7 +641,7 @@ function FinalCTA({ onCTA }: { onCTA: () => void }) {
           onClick={onCTA}
           className="bg-[#00ff88] hover:bg-[#00e67a] text-black px-9 py-4 rounded-full font-semibold text-base md:text-lg transition-all shadow-[0_8px_32px_-8px_rgba(0,255,136,0.5)]"
         >
-          start hunting — $49/mo
+          start hunting — free
         </button>
       </div>
     </section>
