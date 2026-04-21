@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 export function Footer() {
   const pathname = usePathname();
   if (pathname?.startsWith("/app")) return null;
+  if (pathname?.startsWith("/stack")) return null;
 
   return (
     <footer className="bg-bg-dark text-text-light">
