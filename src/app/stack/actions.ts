@@ -1,109 +1,265 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { query } from "@/lib/db";
-import { generateStack } from "@/lib/anthropic";
+import { query, queryOne } from "@/lib/db";
+import { generateMatchReasons, type LeadContext } from "@/lib/anthropic";
 import type { Vendor } from "@/lib/leads";
+import vendorMatches from "@/data/vendor-matches.json";
 
-// Rough rate limit: max 10 stack generations per IP per hour (in-memory, resets on deploy)
-const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
-const RATE_WINDOW_MS = 60 * 60 * 1000;
-const RATE_MAX = 10;
-
-function checkRateLimit(ip: string): { ok: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitCache.get(ip);
-  if (!entry || entry.resetAt < now) {
-    rateLimitCache.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { ok: true, remaining: RATE_MAX - 1 };
-  }
-  if (entry.count >= RATE_MAX) return { ok: false, remaining: 0 };
-  entry.count++;
-  return { ok: true, remaining: RATE_MAX - entry.count };
+export interface StackLeadFormData {
+  name: string;
+  email: string;
+  linkedin: string;
+  company: string;
+  title: string;
+  website: string;
+  revenue: string;
+  employees: string;
+  industry: string;
+  searched_vendor: string;
+  problem: string;
 }
 
-function makeUniqueSlug(hint: string, taken: Set<string>): string {
-  const base =
-    hint
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 60) || "stack";
-  if (!taken.has(base)) return base;
-  for (let i = 2; i < 100; i++) {
-    const candidate = `${base}-${i}`;
-    if (!taken.has(candidate)) return candidate;
-  }
-  return `${base}-${Math.random().toString(36).slice(2, 7)}`;
+export interface MatchedVendor {
+  slug: string;
+  name: string;
+  category: string | null;
+  tagline: string;
+  match_reason: string;
 }
 
-export async function generateStackAction(formData: FormData) {
-  const queryText = String(formData.get("query") || "").trim();
+export interface SubmitResult {
+  success: true;
+  lead_id: number;
+  matches: MatchedVendor[];
+  lead_email: string;
+}
 
-  if (!queryText || queryText.length < 10) {
-    return { error: "Tell me a bit more about your company (at least 10 characters)." };
+export interface SubmitError {
+  error: string;
+}
+
+function lookupVendorSlugs(searchedVendor: string): string[] {
+  const key = searchedVendor.trim().toLowerCase();
+  const raw = vendorMatches as unknown as Record<string, unknown>;
+  const map: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (k === "_comment") continue;
+    if (Array.isArray(v) && v.every((x) => typeof x === "string")) {
+      map[k] = v as string[];
+    }
   }
-  if (queryText.length > 2000) {
-    return { error: "Keep it under 2,000 characters." };
+  if (map[key]) return map[key];
+  // Try partial match (e.g. "Rippling HR" → "rippling")
+  for (const mapKey of Object.keys(map)) {
+    if (mapKey === "_default") continue;
+    if (key.includes(mapKey) || mapKey.includes(key)) return map[mapKey];
+  }
+  return map["_default"] ?? [];
+}
+
+export async function submitStackLeadAction(
+  formData: FormData
+): Promise<SubmitResult | SubmitError> {
+  const get = (k: string) => String(formData.get(k) || "").trim();
+
+  const lead: StackLeadFormData = {
+    name: get("name"),
+    email: get("email"),
+    linkedin: get("linkedin"),
+    company: get("company"),
+    title: get("title"),
+    website: get("website"),
+    revenue: get("revenue"),
+    employees: get("employees"),
+    industry: get("industry"),
+    searched_vendor: get("searched_vendor"),
+    problem: get("problem"),
+  };
+
+  // Validation
+  if (!lead.name || !lead.email || !lead.company) {
+    return { error: "Name, email, and company are required." };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) {
+    return { error: "Enter a valid work email." };
+  }
+  if (!lead.searched_vendor) {
+    return { error: "Tell us which vendor you were searching for." };
+  }
+  if (!lead.problem || lead.problem.length < 10) {
+    return { error: "Add a sentence about what problem you're solving." };
   }
 
-  // Rate limit by IP
-  const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    hdrs.get("x-real-ip") ||
-    "unknown";
-  const rate = checkRateLimit(ip);
-  if (!rate.ok) {
-    return { error: "Too many stacks in the last hour. Try again in a bit." };
+  // Lookup matches
+  const slugs = lookupVendorSlugs(lead.searched_vendor);
+  if (slugs.length === 0) {
+    return { error: "Couldn't find matches. Try a different vendor name." };
   }
 
-  // Load vendors with a numeric payout and non-empty icp (we want usable ones)
   const vendors = await query<Vendor>(
     `SELECT id, slug, name, target_industries, category, payout_text, payout_amount,
-            commission_text, description, icp, email, website, country, status, created_at, updated_at
-     FROM vendors
-     WHERE status = 'active'
-     ORDER BY payout_amount DESC NULLS LAST`
+            commission_text, description, long_description, icp, icp_bullets, primary_buyer,
+            commission_notes, email, website, country, status, created_at, updated_at
+     FROM vendors WHERE slug = ANY($1) AND status = 'active'`,
+    [slugs]
   );
 
-  if (vendors.length === 0) {
-    return { error: "No vendors available yet." };
+  // Preserve the order from the JSON mapping
+  const vendorBySlug = new Map(vendors.map((v) => [v.slug, v]));
+  const ordered = slugs
+    .map((s) => vendorBySlug.get(s))
+    .filter((v): v is Vendor => !!v)
+    .slice(0, 3);
+
+  if (ordered.length === 0) {
+    return { error: "No matches available right now. We'll reach out manually." };
   }
 
-  let result;
+  // Generate personalized match reasons via Claude
+  const context: LeadContext = {
+    company: lead.company,
+    industry: lead.industry || null,
+    revenue: lead.revenue || null,
+    employees: lead.employees || null,
+    searched_vendor: lead.searched_vendor || null,
+    problem: lead.problem || null,
+  };
+
+  let reasons: string[];
   try {
-    result = await generateStack(queryText, vendors);
+    reasons = await generateMatchReasons(
+      ordered.map((v) => ({ vendor: v, lead: context }))
+    );
   } catch (e) {
-    console.error("Claude generateStack failed", e);
-    return { error: "The AI had a moment. Try again — and if it keeps failing, simplify the query." };
+    console.error("generateMatchReasons failed", e);
+    // Fallback: use vendor description as reason
+    reasons = ordered.map(
+      (v) => v.description?.split(/[.!?]/)[0] ?? `A strong fit for ${lead.company}.`
+    );
   }
 
-  if (!result.picks || result.picks.length === 0) {
-    return { error: "Couldn't find a good match. Try adding more detail about what you need." };
-  }
-
-  // Get taken slugs to avoid collision
-  const existing = await query<{ slug: string }>(
-    `SELECT slug FROM stacks WHERE slug LIKE $1 || '%' LIMIT 100`,
-    [result.slug_hint.slice(0, 40)]
-  );
-  const taken = new Set(existing.map((r) => r.slug));
-  const slug = makeUniqueSlug(result.slug_hint || result.stack_title, taken);
-
-  await query(
-    `INSERT INTO stacks (slug, query_text, stack_title, inferred_profile, picks, created_by_ip)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+  // Save lead to DB
+  const inserted = await queryOne<{ id: number }>(
+    `INSERT INTO stack_leads
+      (name, email, linkedin, company, title, website, revenue, employees,
+       industry, searched_vendor, problem, matched_vendors, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted')
+     RETURNING id`,
     [
-      slug,
-      queryText,
-      result.stack_title,
-      JSON.stringify(result.inferred_profile),
-      JSON.stringify({ picks: result.picks, summary: result.summary }),
-      ip,
+      lead.name,
+      lead.email.toLowerCase(),
+      lead.linkedin || null,
+      lead.company,
+      lead.title || null,
+      lead.website || null,
+      lead.revenue || null,
+      lead.employees || null,
+      lead.industry || null,
+      lead.searched_vendor,
+      lead.problem,
+      JSON.stringify(ordered.map((v) => v.slug)),
     ]
   );
+  if (!inserted) {
+    return { error: "Couldn't save lead. Try again." };
+  }
 
-  redirect(`/stack/${slug}`);
+  const matches: MatchedVendor[] = ordered.map((v, i) => ({
+    slug: v.slug,
+    name: v.name,
+    category: v.category,
+    tagline: v.description?.split(/[.!?]/)[0]?.trim() ?? "",
+    match_reason: reasons[i] || "",
+  }));
+
+  return {
+    success: true,
+    lead_id: inserted.id,
+    matches,
+    lead_email: lead.email,
+  };
+}
+
+export async function confirmMeetingsAction(
+  formData: FormData
+): Promise<{ success: true } | { error: string }> {
+  const leadId = Number(formData.get("lead_id"));
+  const selectedRaw = String(formData.get("selected_vendors") || "");
+  const selectedVendors = selectedRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!leadId || selectedVendors.length === 0) {
+    return { error: "Select at least one vendor to meet with." };
+  }
+
+  const lead = await queryOne<{
+    id: number;
+    name: string;
+    email: string;
+    company: string;
+    searched_vendor: string;
+    problem: string;
+    matched_vendors: string[];
+  }>(
+    `SELECT id, name, email, company, searched_vendor, problem, matched_vendors
+     FROM stack_leads WHERE id = $1`,
+    [leadId]
+  );
+  if (!lead) return { error: "Lead not found." };
+
+  await query(
+    `UPDATE stack_leads
+     SET selected_vendors = $1, status = 'meetings_selected', updated_at = NOW()
+     WHERE id = $2`,
+    [JSON.stringify(selectedVendors), leadId]
+  );
+
+  // Email Greg via Resend
+  const resendKey = process.env.RESEND_API_KEY;
+  const notificationEmail = process.env.NOTIFICATION_EMAIL;
+  if (resendKey && notificationEmail) {
+    try {
+      const { Resend } = await import("resend");
+      const resend = new Resend(resendKey);
+
+      // Look up selected vendor details
+      const vendors = await query<{
+        slug: string;
+        name: string;
+        email: string | null;
+      }>(
+        `SELECT slug, name, email FROM vendors WHERE slug = ANY($1)`,
+        [selectedVendors]
+      );
+      const vendorList = vendors
+        .map(
+          (v) =>
+            `• <strong>${v.name}</strong>${v.email ? ` — ${v.email}` : ""}`
+        )
+        .join("<br>");
+
+      await resend.emails.send({
+        from: "Leapify <onboarding@resend.dev>",
+        to: notificationEmail,
+        subject: `🎯 Stack lead: ${lead.name} at ${lead.company} wants ${selectedVendors.length} intro(s)`,
+        html: `
+          <h2>New Stack match submission</h2>
+          <p><strong>${lead.name}</strong> at <strong>${lead.company}</strong> wants to meet with:</p>
+          <p>${vendorList}</p>
+          <hr>
+          <p><strong>Email:</strong> ${lead.email}</p>
+          <p><strong>Searched for:</strong> ${lead.searched_vendor}</p>
+          <p><strong>Problem:</strong> ${lead.problem}</p>
+          <hr>
+          <p>Lead ID: ${lead.id}. Promised 24h turnaround — send the calendar link.</p>
+        `,
+      });
+    } catch (e) {
+      console.error("Failed to email stack lead notification", e);
+    }
+  }
+
+  return { success: true };
 }

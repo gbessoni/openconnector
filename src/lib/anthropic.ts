@@ -45,6 +45,84 @@ Rules:
 - display_label is a human-readable summary, Title Case.
 - Do NOT wrap in markdown fences. Return only JSON.`;
 
+export interface LeadContext {
+  company: string;
+  industry?: string | null;
+  revenue?: string | null;
+  employees?: string | null;
+  searched_vendor?: string | null;
+  problem?: string | null;
+}
+
+export interface MatchReasonInput {
+  vendor: Pick<Vendor, "slug" | "name" | "description" | "icp" | "target_industries">;
+  lead: LeadContext;
+}
+
+const MATCH_REASON_SYSTEM = `You write ONE concise sentence (max 30 words) explaining why a specific vendor matches a buyer's situation. No buzzwords. No "leverage" or "empower". Reference the buyer's actual specifics (what they searched for, their revenue, their industry, their problem). Output plain text — no JSON, no quotes.`;
+
+export async function generateMatchReasons(
+  inputs: MatchReasonInput[]
+): Promise<string[]> {
+  if (inputs.length === 0) return [];
+
+  const client = getClient();
+
+  // One call, all reasons at once. Cheaper and faster than N calls.
+  const joined = inputs
+    .map(
+      (inp, i) => `### Match ${i + 1}
+Vendor: ${inp.vendor.name}
+Vendor description: ${inp.vendor.description ?? "—"}
+Vendor ICP: ${inp.vendor.icp ?? "—"}
+Vendor target industries: ${inp.vendor.target_industries ?? "—"}
+
+Buyer company: ${inp.lead.company}
+Buyer industry: ${inp.lead.industry ?? "—"}
+Buyer revenue: ${inp.lead.revenue ?? "—"}
+Buyer employees: ${inp.lead.employees ?? "—"}
+Buyer searched for: ${inp.lead.searched_vendor ?? "—"}
+Buyer's problem: ${inp.lead.problem ?? "—"}
+`
+    )
+    .join("\n\n");
+
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 800,
+    system: MATCH_REASON_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: `Write ONE match reason per match below. Return them numbered 1, 2, 3... exactly in order, one per line. No extra commentary.\n\n${joined}`,
+      },
+    ],
+  });
+
+  const textBlock = res.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    return inputs.map(() => "");
+  }
+
+  // Parse numbered lines
+  const lines = textBlock.text
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const reasons: string[] = inputs.map(() => "");
+  for (const line of lines) {
+    const m = line.match(/^(\d+)[\.\)]\s*(.+)$/);
+    if (m) {
+      const idx = parseInt(m[1], 10) - 1;
+      if (idx >= 0 && idx < inputs.length) {
+        reasons[idx] = m[2].trim();
+      }
+    }
+  }
+  return reasons;
+}
+
 export async function parseICPQuery(
   nl: string
 ): Promise<{ filters: PDLSearchFilters; display_label: string }> {
