@@ -41,7 +41,7 @@ export function Footer() {
                 Find Leads
               </Link>
               <Link href="/hunter" className="hover:text-accent transition-colors">
-                Hunter ($49/mo)
+                Hunter
               </Link>
               <Link href="/referral_connector.html" className="hover:text-accent transition-colors">
                 Referral Partner
