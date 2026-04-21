@@ -285,8 +285,9 @@ export async function updateVendorAction(formData: FormData) {
       commission_notes = $12,
       email = $13,
       website = $14,
+      country = $15,
       updated_at = NOW()
-     WHERE id = $15`,
+     WHERE id = $16`,
     [
       name,
       get("category"),
@@ -302,6 +303,7 @@ export async function updateVendorAction(formData: FormData) {
       get("commission_notes"),
       get("email"),
       get("website"),
+      get("country"),
       id,
     ]
   );

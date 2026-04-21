@@ -36,8 +36,8 @@ export default async function EditVendorPage({ params }: PageProps) {
             Edit {vendor.name}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Enrich vendor details. Connectors see everything except email and
-            website.
+            Enrich vendor details. Connectors see everything except the vendor
+            email.
           </p>
         </div>
 

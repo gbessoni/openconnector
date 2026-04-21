@@ -114,10 +114,10 @@ export function VendorEditForm({ vendor }: { vendor: Vendor }) {
         />
       </Section>
 
-      <Section title="Contact (admin only)">
+      <Section title="Contact">
         <div className="grid grid-cols-2 gap-4">
           <Field
-            label="Vendor email"
+            label="Vendor email (admin only)"
             name="email"
             type="email"
             defaultValue={vendor.email || ""}
@@ -126,8 +126,15 @@ export function VendorEditForm({ vendor }: { vendor: Vendor }) {
             label="Website"
             name="website"
             defaultValue={vendor.website || ""}
+            placeholder="example.com"
           />
         </div>
+        <Field
+          label="Country"
+          name="country"
+          defaultValue={vendor.country || ""}
+          placeholder="United States"
+        />
       </Section>
 
       {error && (

@@ -11,7 +11,7 @@ export default async function CompaniesPage() {
 
   const vendors = await query<Vendor>(
     `SELECT id, slug, name, target_industries, category, payout_text, payout_amount,
-            commission_text, description, icp, email, website, status, created_at, updated_at
+            commission_text, description, icp, email, website, country, status, created_at, updated_at
      FROM vendors WHERE status = 'active' ORDER BY name ASC`
   );
 
@@ -78,11 +78,19 @@ export default async function CompaniesPage() {
                     <h3 className="font-semibold text-gray-900 group-hover:underline">
                       {v.name}
                     </h3>
-                    {v.category && (
-                      <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mt-1">
-                        {v.category}
-                      </span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                      {v.category && (
+                        <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          {v.category}
+                        </span>
+                      )}
+                      {v.country && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-500">
+                          <span aria-hidden>📍</span>
+                          {v.country}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">

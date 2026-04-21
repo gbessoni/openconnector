@@ -71,11 +71,29 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">{v.name}</h1>
-              {v.category && (
-                <span className="inline-block text-xs font-semibold uppercase tracking-widest text-gray-500 mt-1.5">
-                  {v.category}
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                {v.category && (
+                  <span className="inline-block text-xs font-semibold uppercase tracking-widest text-gray-500">
+                    {v.category}
+                  </span>
+                )}
+                {v.country && (
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+                    <span aria-hidden>📍</span>
+                    {v.country}
+                  </span>
+                )}
+                {websiteUrl && (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
+                    {v.website}
+                  </a>
+                )}
+              </div>
             </div>
             <div className="text-right shrink-0">
               <div className="flex items-center gap-1.5 justify-end mb-1">
@@ -203,21 +221,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card title="Vendor contact (admin only)">
               <DetailRow label="Email" value={v.email} />
-              <DetailRow
-                label="Website"
-                value={
-                  websiteUrl ? (
-                    <a
-                      href={websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline"
-                    >
-                      {v.website}
-                    </a>
-                  ) : null
-                }
-              />
             </Card>
 
             <Card title="Vendor economics (admin only)">
