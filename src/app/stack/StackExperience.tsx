@@ -10,32 +10,33 @@ import { NLFinder } from "./NLFinder";
 import { Matches } from "./Matches";
 import { Confirmation } from "./Confirmation";
 import type { MatchedVendor } from "./actions";
+import type { VendorAngle } from "@/data/vendor-ad-angles";
 
 type View = "landing" | "matches" | "confirmation";
 
+export interface UTMBundle {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  source?: string;
+  campaign?: string;
+}
+
 export function StackExperience({
-  searchParamsPromise,
+  vendor,
+  vendorSlug,
+  utm,
 }: {
-  searchParamsPromise?: Promise<{ vendor?: string; mode?: string }>;
+  vendor: VendorAngle | null;
+  vendorSlug: string | null;
+  utm: UTMBundle;
 }) {
   const [view, setView] = useState<View>("landing");
   const [leadId, setLeadId] = useState<number | null>(null);
   const [leadEmail, setLeadEmail] = useState<string>("");
   const [matches, setMatches] = useState<MatchedVendor[]>([]);
-  const [prefilledVendor, setPrefilledVendor] = useState<string>("");
-  const [paramsLoaded, setParamsLoaded] = useState(false);
-
-  // Pre-fill vendor from ?vendor= query param (ad landing)
-  useEffect(() => {
-    if (!searchParamsPromise) {
-      setParamsLoaded(true);
-      return;
-    }
-    searchParamsPromise.then((p) => {
-      if (p?.vendor) setPrefilledVendor(p.vendor);
-      setParamsLoaded(true);
-    });
-  }, [searchParamsPromise]);
 
   // Reset scroll when view changes
   useEffect(() => {
@@ -64,9 +65,12 @@ export function StackExperience({
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // Only render the form once search params have resolved — keeps the form in
-  // sync (so we know whether to skip the vendor question)
-  const hasVendorParam = !!prefilledVendor;
+  // When we have a known vendor, use the structured form pre-filled with vendor
+  // context. Otherwise use the NL method as primary entry.
+  const hasVendor = !!vendor;
+  // Use the display name as the prefilled vendor so the lead record captures
+  // the canonical name, not the raw slug
+  const prefilledVendor = vendor?.displayName ?? vendorSlug ?? "";
 
   return (
     <div
@@ -74,23 +78,19 @@ export function StackExperience({
     >
       {view === "landing" && (
         <>
-          <Hero onCTA={scrollToForm} />
+          <Hero onCTA={scrollToForm} vendor={vendor} />
           <SocialProof />
           <HowItWorks />
           <section id="qualification-form" className="px-6 py-20 md:py-28">
             <div className="max-w-2xl mx-auto">
-              {!paramsLoaded ? (
-                <div className="text-center text-white/40 text-sm">Loading…</div>
-              ) : hasVendorParam ? (
-                // Ad-traffic flow: they know what vendor they searched for,
-                // show structured form (vendor field auto-hidden inside form)
+              {hasVendor ? (
                 <QualificationForm
                   prefilledVendor={prefilledVendor}
+                  utm={utm}
                   onSuccess={onSubmitSuccess}
                 />
               ) : (
-                // Organic flow: NL is primary, structured form as fallback
-                <NLFinder onSuccess={onSubmitSuccess} />
+                <NLFinder utm={utm} onSuccess={onSubmitSuccess} />
               )}
             </div>
           </section>

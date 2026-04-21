@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitStackLeadNLAction, type MatchedVendor } from "./actions";
+import type { UTMBundle } from "./StackExperience";
 
 const EXAMPLES = [
   "20-person B2B SaaS, Series A, need banking + payroll + sales tax",
@@ -11,8 +12,10 @@ const EXAMPLES = [
 ];
 
 export function NLFinder({
+  utm,
   onSuccess,
 }: {
+  utm?: UTMBundle;
   onSuccess: (
     leadId: number,
     email: string,
@@ -55,6 +58,16 @@ export function NLFinder({
       const fd = new FormData();
       fd.set("nl_query", nlQuery);
       Object.entries(form).forEach(([k, v]) => fd.set(k, v));
+      // Forward UTM attribution
+      if (utm) {
+        if (utm.utm_source) fd.set("utm_source", utm.utm_source);
+        if (utm.utm_medium) fd.set("utm_medium", utm.utm_medium);
+        const campaign = utm.utm_campaign || utm.campaign;
+        if (campaign) fd.set("utm_campaign", campaign);
+        if (utm.utm_content) fd.set("utm_content", utm.utm_content);
+        if (utm.utm_term) fd.set("utm_term", utm.utm_term);
+        if (!utm.utm_source && utm.source) fd.set("utm_source", utm.source);
+      }
       const res = await submitStackLeadNLAction(fd);
       if ("error" in res) {
         setError(res.error);

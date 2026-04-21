@@ -161,8 +161,10 @@ export async function submitStackLeadNLAction(
   const inserted = await queryOne<{ id: number }>(
     `INSERT INTO stack_leads
       (name, email, linkedin, company, title, website, revenue, employees,
-       industry, searched_vendor, problem, matched_vendors, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted')
+       industry, searched_vendor, problem, matched_vendors, status,
+       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted',
+             $13,$14,$15,$16,$17)
      RETURNING id`,
     [
       lead.name,
@@ -177,6 +179,11 @@ export async function submitStackLeadNLAction(
       "AI match (NL)",
       lead.nl_query,
       JSON.stringify(ordered.map((v) => v.slug)),
+      get("utm_source") || null,
+      get("utm_medium") || null,
+      get("utm_campaign") || null,
+      get("utm_content") || null,
+      get("utm_term") || null,
     ]
   );
   if (!inserted) return { error: "Couldn't save lead. Try again." };
@@ -281,12 +288,14 @@ export async function submitStackLeadAction(
     );
   }
 
-  // Save lead to DB
+  // Save lead to DB (with UTM attribution if provided)
   const inserted = await queryOne<{ id: number }>(
     `INSERT INTO stack_leads
       (name, email, linkedin, company, title, website, revenue, employees,
-       industry, searched_vendor, problem, matched_vendors, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted')
+       industry, searched_vendor, problem, matched_vendors, status,
+       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted',
+             $13,$14,$15,$16,$17)
      RETURNING id`,
     [
       lead.name,
@@ -301,6 +310,11 @@ export async function submitStackLeadAction(
       lead.searched_vendor,
       lead.problem,
       JSON.stringify(ordered.map((v) => v.slug)),
+      get("utm_source") || null,
+      get("utm_medium") || null,
+      get("utm_campaign") || null,
+      get("utm_content") || null,
+      get("utm_term") || null,
     ]
   );
   if (!inserted) {

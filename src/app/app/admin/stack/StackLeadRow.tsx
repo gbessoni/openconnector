@@ -19,6 +19,11 @@ interface StackLead {
   matched_vendors: string[];
   selected_vendors: string[] | null;
   status: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +141,15 @@ export function StackLeadRow({
                 ? `Wants ${selected.length} intro(s)`
                 : "No selections yet"}{" "}
               · {new Date(lead.created_at).toLocaleDateString()}
+              {lead.utm_source && (
+                <>
+                  {" · "}
+                  <span className="font-medium text-indigo-600">
+                    {lead.utm_source}
+                    {lead.utm_campaign && ` / ${lead.utm_campaign}`}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <span className="text-gray-400 text-xl shrink-0">

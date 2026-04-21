@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import type { VendorAngle } from "@/data/vendor-ad-angles";
 
-export function Hero({ onCTA }: { onCTA: () => void }) {
+export function Hero({
+  onCTA,
+  vendor,
+}: {
+  onCTA: () => void;
+  vendor: VendorAngle | null;
+}) {
+  const hasVendor = !!vendor;
+
   return (
     <section className="relative px-6 pt-10 md:pt-16 pb-16 md:pb-24 overflow-hidden">
       {/* Subtle radial glow */}
@@ -27,17 +36,34 @@ export function Hero({ onCTA }: { onCTA: () => void }) {
             Stack · by Leapify
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-semibold tracking-[-0.025em] leading-[1.02] mb-6">
-            Your stack,{" "}
-            <span className="text-[#5B4FE8] italic font-normal">upgraded.</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
-            Tell us what you&apos;re running and we&apos;ll match you to 3
-            vendors our network stands behind.
-            <br className="hidden md:block" />
-            No sales calls until you say so.
-          </p>
+          {hasVendor ? (
+            <>
+              <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-semibold tracking-[-0.025em] leading-[1.02] mb-6">
+                Reconsidering{" "}
+                <span className="text-[#5B4FE8] italic font-normal">
+                  {vendor!.displayName}?
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
+                3 {vendor!.angle} — matched in 60 seconds,
+                <br className="hidden md:block" />
+                with a direct intro to the founder.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-semibold tracking-[-0.025em] leading-[1.02] mb-6">
+                Upgrade your{" "}
+                <span className="text-[#5B4FE8] italic font-normal">stack.</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
+                Tell us what you&apos;re running and we&apos;ll match you to 3
+                vendors
+                <br className="hidden md:block" />
+                our network stands behind. No sales calls until you say so.
+              </p>
+            </>
+          )}
 
           <button
             type="button"

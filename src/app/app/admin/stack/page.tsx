@@ -21,6 +21,11 @@ interface StackLead {
   matched_vendors: string[];
   selected_vendors: string[] | null;
   status: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,7 +38,8 @@ export default async function AdminStackPage() {
   const leads = await query<StackLead>(
     `SELECT id, name, email, linkedin, title, company, website, revenue, employees,
             industry, searched_vendor, problem, matched_vendors, selected_vendors,
-            status, created_at, updated_at
+            status, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+            created_at, updated_at
      FROM stack_leads
      ORDER BY
        CASE status

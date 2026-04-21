@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitStackLeadAction, type MatchedVendor } from "./actions";
+import type { UTMBundle } from "./StackExperience";
 
 interface FormState {
   name: string;
@@ -55,9 +56,11 @@ const INDUSTRY_OPTIONS = [
 
 export function QualificationForm({
   prefilledVendor,
+  utm,
   onSuccess,
 }: {
   prefilledVendor?: string;
+  utm?: UTMBundle;
   onSuccess: (leadId: number, email: string, matches: MatchedVendor[]) => void;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -121,6 +124,18 @@ export function QualificationForm({
     startTransition(async () => {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      // Forward UTM attribution
+      if (utm) {
+        if (utm.utm_source) fd.append("utm_source", utm.utm_source);
+        if (utm.utm_medium) fd.append("utm_medium", utm.utm_medium);
+        // Accept both utm_campaign and shorthand "campaign"
+        const campaign = utm.utm_campaign || utm.campaign;
+        if (campaign) fd.append("utm_campaign", campaign);
+        if (utm.utm_content) fd.append("utm_content", utm.utm_content);
+        if (utm.utm_term) fd.append("utm_term", utm.utm_term);
+        const source = utm.utm_source || utm.source;
+        if (source && !utm.utm_source) fd.append("utm_source", source);
+      }
       const res = await submitStackLeadAction(fd);
       if ("error" in res) {
         setError(res.error);
