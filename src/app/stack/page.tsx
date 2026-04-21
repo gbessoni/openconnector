@@ -60,7 +60,16 @@ export default async function StackPage({ searchParams }: PageProps) {
     );
   }
 
-  // Pull UTM params for attribution
+  // Pull UTM params + click IDs for attribution
+  // Preserve the original landing path as "landing_path" for attribution
+  const qsParts: string[] = [];
+  if (rawVendor) qsParts.push(`vendor=${encodeURIComponent(rawVendor)}`);
+  const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid"];
+  utmKeys.forEach((k) => {
+    const v = pickString(p, k);
+    if (v) qsParts.push(`${k}=${encodeURIComponent(v)}`);
+  });
+
   const utm = {
     utm_source: pickString(p, "utm_source"),
     utm_medium: pickString(p, "utm_medium"),
@@ -69,6 +78,9 @@ export default async function StackPage({ searchParams }: PageProps) {
     utm_term: pickString(p, "utm_term"),
     source: pickString(p, "source"),
     campaign: pickString(p, "campaign"),
+    gclid: pickString(p, "gclid"),
+    fbclid: pickString(p, "fbclid"),
+    landing_path: qsParts.length ? `/stack?${qsParts.join("&")}` : "/stack",
   };
 
   return (

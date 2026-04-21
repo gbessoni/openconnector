@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
+import { trackConversion } from "@/lib/track";
 
 interface FormState {
   name: string;
@@ -124,7 +125,7 @@ export function QualificationForm({
     startTransition(async () => {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      // Forward UTM attribution
+      // Forward UTM attribution + click IDs
       if (utm) {
         if (utm.utm_source) fd.append("utm_source", utm.utm_source);
         if (utm.utm_medium) fd.append("utm_medium", utm.utm_medium);
@@ -135,11 +136,20 @@ export function QualificationForm({
         if (utm.utm_term) fd.append("utm_term", utm.utm_term);
         const source = utm.utm_source || utm.source;
         if (source && !utm.utm_source) fd.append("utm_source", source);
+        if (utm.gclid) fd.append("gclid", utm.gclid);
+        if (utm.fbclid) fd.append("fbclid", utm.fbclid);
+        if (utm.landing_path) fd.append("landing_path", utm.landing_path);
       }
       const res = await submitStackLeadAction(fd);
       if ("error" in res) {
         setError(res.error);
       } else {
+        // Fire conversion event BEFORE navigating so it's not cancelled
+        trackConversion({
+          eventName: "stack_lead_submit",
+          value: 50,
+          transactionId: res.lead_id,
+        });
         onSuccess(res.lead_id, res.lead_email, res.matches);
       }
     });

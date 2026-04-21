@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadNLAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
+import { trackConversion } from "@/lib/track";
 
 const EXAMPLES = [
   "20-person B2B SaaS, Series A, need banking + payroll + sales tax",
@@ -58,7 +59,7 @@ export function NLFinder({
       const fd = new FormData();
       fd.set("nl_query", nlQuery);
       Object.entries(form).forEach(([k, v]) => fd.set(k, v));
-      // Forward UTM attribution
+      // Forward UTM attribution + click IDs
       if (utm) {
         if (utm.utm_source) fd.set("utm_source", utm.utm_source);
         if (utm.utm_medium) fd.set("utm_medium", utm.utm_medium);
@@ -67,11 +68,19 @@ export function NLFinder({
         if (utm.utm_content) fd.set("utm_content", utm.utm_content);
         if (utm.utm_term) fd.set("utm_term", utm.utm_term);
         if (!utm.utm_source && utm.source) fd.set("utm_source", utm.source);
+        if (utm.gclid) fd.set("gclid", utm.gclid);
+        if (utm.fbclid) fd.set("fbclid", utm.fbclid);
+        if (utm.landing_path) fd.set("landing_path", utm.landing_path);
       }
       const res = await submitStackLeadNLAction(fd);
       if ("error" in res) {
         setError(res.error);
       } else {
+        trackConversion({
+          eventName: "stack_lead_submit",
+          value: 50,
+          transactionId: res.lead_id,
+        });
         onSuccess(res.lead_id, res.lead_email, res.matches);
       }
     });
@@ -152,41 +161,47 @@ export function NLFinder({
               value={form.company}
               onChange={(v) => update("company", v)}
             />
-            <Input
-              label="LinkedIn URL"
-              type="url"
-              value={form.linkedin}
-              onChange={(v) => update("linkedin", v)}
-              placeholder="https://linkedin.com/in/..."
+            <Select
+              label="Company size"
+              value={form.employees}
+              onChange={(v) => update("employees", v)}
+              options={["1–10", "11–50", "51–200", "201–1000", "1000+"]}
             />
           </div>
 
-          {/* Optional company context — hidden behind disclosure */}
+          {/* Optional details — collapsed by default */}
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
             className="text-xs text-white/50 hover:text-white/80 underline underline-offset-2 decoration-dotted"
           >
-            {showDetails ? "− Hide" : "+ Add"} optional details for better matches
+            {showDetails ? "− Hide" : "+ Add"} optional details (LinkedIn, revenue, industry)
           </button>
 
           {showDetails && (
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
+                  label="LinkedIn URL"
+                  type="url"
+                  value={form.linkedin}
+                  onChange={(v) => update("linkedin", v)}
+                  placeholder="https://linkedin.com/in/..."
+                />
+                <Input
                   label="Your title"
                   value={form.title}
                   onChange={(v) => update("title", v)}
                   placeholder="Founder, Head of Ops..."
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="Website"
                   type="url"
                   value={form.website}
                   onChange={(v) => update("website", v)}
                 />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Select
                   label="Revenue"
                   value={form.revenue}
@@ -199,12 +214,6 @@ export function NLFinder({
                     "$25M–$100M",
                     "$100M+",
                   ]}
-                />
-                <Select
-                  label="Employees"
-                  value={form.employees}
-                  onChange={(v) => update("employees", v)}
-                  options={["1–10", "11–50", "51–200", "201–1000", "1000+"]}
                 />
                 <Select
                   label="Industry"

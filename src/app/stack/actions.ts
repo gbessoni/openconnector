@@ -162,9 +162,10 @@ export async function submitStackLeadNLAction(
     `INSERT INTO stack_leads
       (name, email, linkedin, company, title, website, revenue, employees,
        industry, searched_vendor, problem, matched_vendors, status,
-       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+       utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+       gclid, fbclid, landing_path)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted',
-             $13,$14,$15,$16,$17)
+             $13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING id`,
     [
       lead.name,
@@ -184,6 +185,9 @@ export async function submitStackLeadNLAction(
       get("utm_campaign") || null,
       get("utm_content") || null,
       get("utm_term") || null,
+      get("gclid") || null,
+      get("fbclid") || null,
+      get("landing_path") || null,
     ]
   );
   if (!inserted) return { error: "Couldn't save lead. Try again." };
@@ -293,9 +297,10 @@ export async function submitStackLeadAction(
     `INSERT INTO stack_leads
       (name, email, linkedin, company, title, website, revenue, employees,
        industry, searched_vendor, problem, matched_vendors, status,
-       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+       utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+       gclid, fbclid, landing_path)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'submitted',
-             $13,$14,$15,$16,$17)
+             $13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING id`,
     [
       lead.name,
@@ -315,6 +320,9 @@ export async function submitStackLeadAction(
       get("utm_campaign") || null,
       get("utm_content") || null,
       get("utm_term") || null,
+      get("gclid") || null,
+      get("fbclid") || null,
+      get("landing_path") || null,
     ]
   );
   if (!inserted) {

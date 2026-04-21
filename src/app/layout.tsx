@@ -3,6 +3,7 @@ import { DM_Serif_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
+import { Analytics } from "@/components/Analytics";
 
 const dmSerif = DM_Serif_Display({
   variable: "--font-dm-serif",
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSerif.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col font-sans antialiased">
+        <Analytics />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

@@ -22,6 +22,9 @@ export interface UTMBundle {
   utm_term?: string;
   source?: string;
   campaign?: string;
+  gclid?: string;
+  fbclid?: string;
+  landing_path?: string;
 }
 
 export function StackExperience({

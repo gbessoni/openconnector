@@ -45,9 +45,11 @@ export function Hero({
                 </span>
               </h1>
               <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
-                3 {vendor!.angle} — matched in 60 seconds,
+                Get introduced — directly — to the founders of{" "}
+                <span className="text-white font-medium">3 alternatives</span>{" "}
+                our network trusts.
                 <br className="hidden md:block" />
-                with a direct intro to the founder.
+                No sales calls. No lead funnels.
               </p>
             </>
           ) : (
@@ -57,10 +59,10 @@ export function Hero({
                 <span className="text-[#5B4FE8] italic font-normal">stack.</span>
               </h1>
               <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed mb-10">
-                Tell us what you&apos;re running and we&apos;ll match you to 3
-                vendors
+                Tell us what you&apos;re running. We&apos;ll introduce you —
+                directly —
                 <br className="hidden md:block" />
-                our network stands behind. No sales calls until you say so.
+                to the founders of 3 vendors our network stands behind.
               </p>
             </>
           )}
@@ -70,12 +72,12 @@ export function Hero({
             onClick={onCTA}
             className="inline-flex items-center gap-2 bg-[#5B4FE8] hover:bg-[#4a3ed6] text-white px-8 py-4 rounded-full font-medium text-base transition-all shadow-[0_8px_32px_-8px_rgba(91,79,232,0.6)] hover:shadow-[0_12px_40px_-8px_rgba(91,79,232,0.8)]"
           >
-            Find my matches
+            Get my founder intros
             <span className="text-lg">→</span>
           </button>
 
           <p className="text-xs text-white/40 mt-6">
-            60-second form · zero cost · instant matches
+            60-second form · zero cost · direct founder intros
           </p>
         </div>
       </div>
