@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { submitHunterSignupAction } from "./actions";
+import { trackHunterSignup } from "@/lib/track";
 
 interface UTMBundle {
   utm_source?: string;
@@ -91,23 +92,23 @@ function Hero({ onCTA }: { onCTA: () => void }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
           <div>
             <div className="inline-block bg-[#00ff88]/10 border border-[#00ff88]/30 text-[#00ff88] text-[11px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-6">
-              Hunter · $49/mo
+              Hunter · Free to join
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.025em] leading-[1.05] mb-6">
               turn 30 minutes a day into{" "}
               <span className="text-[#00ff88]">$500–$1,500 a week.</span>
             </h1>
             <p className="text-base md:text-lg text-white/70 leading-relaxed mb-8 max-w-lg">
-              $49/mo. Guaranteed first lead. Real payouts. No cold dialing, no
-              quota, no boss. We give you the tools, the leads, and the pitch —
-              you just make the intros.
+              Free to join. 30% commission on every closed deal. Real payouts.
+              No cold dialing, no quota, no boss. We give you the network, the
+              vendors, and the pitch — you just make the intros.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 onClick={onCTA}
                 className="bg-[#00ff88] hover:bg-[#00e67a] text-black px-7 py-4 rounded-full font-semibold text-base transition-all shadow-[0_8px_32px_-8px_rgba(0,255,136,0.4)]"
               >
-                start hunting — $49/mo
+                start hunting — free
               </button>
               <a
                 href="#how-it-works"
@@ -177,9 +178,9 @@ function Pitch() {
     <section className="px-6 py-20 md:py-28 border-y border-white/10 bg-white/[0.02]">
       <div className="max-w-4xl mx-auto text-center">
         <p className="text-2xl md:text-4xl font-semibold tracking-[-0.02em] leading-[1.25]">
-          apollo charges you $49 to find leads.{" "}
+          apollo charges you $49/mo to find cold leads.{" "}
           <span className="text-[#00ff88]">
-            we charge you $49 and pay you to close them.
+            leapify pays you to close warm ones.
           </span>
         </p>
       </div>
@@ -193,22 +194,16 @@ function Pitch() {
 function Features() {
   const items = [
     {
-      icon: "🗂",
-      title: "Verified B2B lead database",
-      body:
-        "Search 10,000+ founders, operators, and execs filtered by ICP fit. No more scraping.",
-    },
-    {
-      icon: "🎯",
-      title: "1 SQL guaranteed + meeting booked",
-      body:
-        "Every month, we hand you one qualified lead with a confirmed meeting. Or we refund your $49.",
-    },
-    {
       icon: "💰",
       title: "30% commission on every close",
       body:
         "Payouts range from $135 to $1,125 per intro, paid within 30 days.",
+    },
+    {
+      icon: "🎯",
+      title: "Refer from your own network",
+      body:
+        "Know the right people? Submit them directly — no paywall, no quotas, no hoops.",
     },
     {
       icon: "✍️",
@@ -223,10 +218,16 @@ function Features() {
         "Vendors actively looking for specific lead profiles. Hunt against the list, close faster.",
     },
     {
+      icon: "🗂",
+      title: "Optional lead database upgrade",
+      body:
+        "Don't have a network? Unlock the 10,000+ B2B lead database for a small monthly fee — only if you need it.",
+    },
+    {
       icon: "🚫",
       title: "No cap, no quota, no boss",
       body:
-        "$49 is your only fixed cost. The ceiling is whatever you can close.",
+        "Zero fixed costs to get started. The ceiling is whatever you can close.",
     },
   ];
 
@@ -235,7 +236,7 @@ function Features() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <div className="text-xs uppercase tracking-[0.2em] text-[#00ff88] font-semibold mb-4">
-            What you get for $49/mo
+            What you get — free to join
           </div>
           <h2 className="text-3xl md:text-5xl font-bold tracking-[-0.02em]">
             Everything you need to hunt.
@@ -266,7 +267,7 @@ function Features() {
 // ─────────────────────────────────────────────────────────────
 function HowItWorks() {
   const steps = [
-    { n: "01", title: "Join the hunter tier", body: "$49/mo. Cancel anytime." },
+    { n: "01", title: "Join free", body: "60-second signup. No card required." },
     { n: "02", title: "Hunt leads in the platform", body: "Search, qualify, and pitch using our templates." },
     { n: "03", title: "Submit intros, get paid", body: "We qualify, we close, you earn 30%." },
   ];
@@ -455,16 +456,16 @@ function Guarantee() {
     <section className="px-6 py-20 md:py-24 bg-[#00ff88]/5 border-y border-[#00ff88]/30">
       <div className="max-w-3xl mx-auto text-center">
         <div className="inline-block bg-[#00ff88]/20 border border-[#00ff88]/50 text-[#00ff88] text-[11px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-6">
-          The guarantee
+          How you get paid
         </div>
         <h2 className="text-3xl md:text-5xl font-bold tracking-[-0.025em] leading-[1.1] mb-6">
-          We&apos;re so confident,
-          <br />
-          <span className="text-[#00ff88]">we put $49 on it.</span>
+          Every closed deal.{" "}
+          <span className="text-[#00ff88]">Paid in 30 days.</span>
         </h2>
         <p className="text-base md:text-lg text-white/80 leading-relaxed max-w-xl mx-auto">
-          If we don&apos;t deliver 1 qualified SQL with a booked meeting in your
-          first 30 days, we refund your subscription. No questions, no hoops.
+          You submit an intro. We close the deal. The vendor pays us.
+          Within 30 days of that payment, you get 30% — direct deposit,
+          no chasing, no invoicing.
         </p>
       </div>
     </section>
@@ -478,7 +479,7 @@ function Testimonials() {
   const items = [
     {
       quote:
-        "laid off from my SDR role in march. joined the hunter tier in april, made $3,400 in my first month closing payroll and banking intros. best $49 i ever spent.",
+        "laid off from my SDR role in march. joined hunter in april, made $3,400 in my first month closing payroll and banking intros. zero cost to get in, 30% of every close.",
       name: "Marcus T.",
       role: "Former SDR",
       initials: "MT",
@@ -543,28 +544,28 @@ function Testimonials() {
 function FAQ() {
   const items = [
     {
+      q: "Is Hunter really free?",
+      a: "Yes. Signup is free, referring leads from your network is free, and you earn 30% on every closed deal. You only pay if you want to use our premium lead database (an optional in-app upgrade).",
+    },
+    {
       q: "Do I need sales experience?",
-      a: "Helpful but not required. We give you templates and coaching.",
+      a: "Helpful but not required. We give you pitch templates and coaching.",
     },
     {
       q: "How do payouts work?",
-      a: "You earn 30% of what we collect from the vendor. Paid within 30 days of the deal closing.",
+      a: "You earn 30% of what the vendor pays us. Paid within 30 days of the deal closing via direct deposit.",
     },
     {
-      q: "What if I don't close anything in my first month?",
-      a: "We guarantee 1 SQL with a meeting booked, or full refund.",
-    },
-    {
-      q: "Can I cancel anytime?",
-      a: "Yes. No contract, no annual commitment.",
+      q: "What if I don't know anyone in the vendor's ICP?",
+      a: "Most people know more than they think — start with LinkedIn connections. If you want to hunt beyond your network, upgrade to the lead database inside the app.",
     },
     {
       q: "Is there a cap on earnings?",
-      a: "No. The more you close, the more you earn.",
+      a: "No. The more you close, the more you earn. No quotas either.",
     },
     {
-      q: "What's the difference between Hunter and the free referral network?",
-      a: "The free tier is for people with an existing network they're referring. Hunter is for people who want to actively prospect inside our platform and get tools, leads, and guarantees.",
+      q: "How is this different from AngelList/Superconnector/etc?",
+      a: "We hand-vet every vendor, pre-write your pitches, and pay faster. You own the relationship, we handle the deal mechanics.",
     },
   ];
 
@@ -628,13 +629,13 @@ function FinalCTA({ onCTA }: { onCTA: () => void }) {
       />
       <div className="relative max-w-2xl mx-auto text-center">
         <h2 className="text-4xl md:text-6xl font-bold tracking-[-0.025em] leading-[1.05] mb-5">
-          $49.{" "}
-          <span className="text-[#00ff88]">Guaranteed SQL.</span>
+          Free to join.{" "}
+          <span className="text-[#00ff88]">30% of every close.</span>
           <br />
           Unlimited upside.
         </h2>
         <p className="text-base md:text-lg text-white/70 mb-10">
-          Cancel anytime. No contract. No quota.
+          60-second signup. No card. No quota. No boss.
         </p>
         <button
           onClick={onCTA}
@@ -737,12 +738,15 @@ function SignupModal({
         setError(res.error);
         return;
       }
-      // If Stripe is configured, redirect to Checkout. Otherwise show the
-      // "check your email" success state.
-      if (res.checkout_url) {
-        window.location.href = res.checkout_url;
-        return;
-      }
+      // Fire Google Ads conversion before showing success screen
+      const [firstName, ...rest] = form.name.trim().split(/\s+/);
+      trackHunterSignup({
+        signupId: res.id,
+        email: form.email,
+        firstName,
+        lastName: rest.join(" ") || undefined,
+        value: 49,
+      });
       setSuccess(true);
     });
   }
@@ -845,7 +849,7 @@ function SignupModal({
               <h3 className="text-2xl font-bold tracking-tight">
                 {step === 1 && "Your info."}
                 {step === 2 && "Your background."}
-                {step === 3 && "$49/mo — confirm."}
+                {step === 3 && "Confirm & start hunting."}
               </h3>
             </div>
 
@@ -918,23 +922,22 @@ function SignupModal({
             {step === 3 && (
               <div>
                 <div className="bg-white/[0.03] border border-white/10 rounded-xl p-5 mb-4">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-sm text-white/60">Hunter tier</span>
-                    <span className="text-3xl font-bold text-[#00ff88] tabular-nums">
-                      $49<span className="text-sm text-white/40">/mo</span>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <span className="text-sm text-white/60">Hunter access</span>
+                    <span className="text-2xl font-bold text-[#00ff88] tabular-nums">
+                      Free
                     </span>
                   </div>
-                  <ul className="text-xs text-white/70 mt-4 space-y-1.5">
-                    <li>✓ Access to the B2B lead platform</li>
-                    <li>✓ 1 qualified SQL + meeting booked every month</li>
+                  <ul className="text-xs text-white/70 space-y-1.5">
+                    <li>✓ Refer leads from your own network, free forever</li>
                     <li>✓ 30% commission on every closed deal</li>
                     <li>✓ Pitch templates + weekly hot list</li>
-                    <li>✓ Cancel anytime</li>
+                    <li>✓ No card required, no quota, no boss</li>
                   </ul>
                 </div>
                 <p className="text-xs text-white/50 text-center mb-4">
-                  We&apos;ll email you a secure Stripe checkout link within 10
-                  minutes. Your card isn&apos;t charged yet.
+                  We&apos;ll email you login details within 10 minutes. Sign in
+                  and start submitting intros.
                 </p>
               </div>
             )}

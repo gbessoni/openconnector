@@ -19,10 +19,7 @@ export interface HunterSignupPayload {
 
 export async function submitHunterSignupAction(
   formData: FormData
-): Promise<
-  | { success: true; id: number; checkout_url?: string }
-  | { error: string }
-> {
+): Promise<{ success: true; id: number } | { error: string }> {
   const get = (k: string) => String(formData.get(k) || "").trim();
 
   const payload: HunterSignupPayload = {
@@ -78,53 +75,23 @@ export async function submitHunterSignupAction(
   );
   if (!inserted) return { error: "Failed to save signup." };
 
-  // Always notify admin even if Stripe isn't set up yet
-  const resendKey = process.env.RESEND_API_KEY;
-  const notificationEmail = process.env.NOTIFICATION_EMAIL;
+  // Mark them active immediately — free tier
+  await query(
+    `UPDATE hunter_signups SET status = 'active', updated_at = NOW() WHERE id = $1`,
+    [inserted.id]
+  );
 
-  // Create Stripe Checkout Session
-  let checkoutUrl: string | undefined;
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-
-  if (stripeKey && HUNTER_PRICE_ID) {
-    try {
-      const stripe = getStripe();
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        payment_method_types: ["card"],
-        customer_email: payload.email.toLowerCase(),
-        line_items: [{ price: HUNTER_PRICE_ID, quantity: 1 }],
-        success_url: `${siteUrl()}/hunter/thanks?signup_id=${inserted.id}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${siteUrl()}/hunter?cancelled=1`,
-        allow_promotion_codes: true,
-        subscription_data: {
-          metadata: {
-            hunter_signup_id: String(inserted.id),
-          },
-        },
-        metadata: {
-          hunter_signup_id: String(inserted.id),
-          utm_source: payload.utm_source || "",
-          utm_campaign: payload.utm_campaign || "",
-          background: payload.background || "",
-        },
-      });
-
-      checkoutUrl = session.url || undefined;
-
-      // Mark as checkout sent and store session id for webhook correlation
-      await query(
-        `UPDATE hunter_signups SET status = 'checkout_sent', updated_at = NOW() WHERE id = $1`,
-        [inserted.id]
-      );
-    } catch (e) {
-      console.error("Stripe checkout create failed", e);
-      // Don't fail the whole flow — they'll get a manual follow-up email
-      checkoutUrl = undefined;
-    }
+  // Fire Day 0 welcome email via the same helper used by the Stripe webhook
+  try {
+    const { sendHunterWelcomeEmail } = await import("@/lib/hunter-emails");
+    await sendHunterWelcomeEmail(inserted.id);
+  } catch (e) {
+    console.error("Failed to send hunter welcome email", e);
   }
 
-  // Email Greg regardless
+  // Email Greg
+  const resendKey = process.env.RESEND_API_KEY;
+  const notificationEmail = process.env.NOTIFICATION_EMAIL;
   if (resendKey && notificationEmail) {
     try {
       const { Resend } = await import("resend");
@@ -143,12 +110,10 @@ export async function submitHunterSignupAction(
       await resend.emails.send({
         from: "Leapify Hunter <onboarding@resend.dev>",
         to: notificationEmail,
-        subject: checkoutUrl
-          ? `🎯 Hunter signup: ${payload.name} — checkout started`
-          : `🎯 Hunter signup: ${payload.name} — needs manual checkout link`,
+        subject: `🏹 New free Hunter signup: ${payload.name}`,
         html: `
-          <h2>New Hunter signup</h2>
-          <p><strong>${payload.name}</strong> wants to join the Hunter tier.</p>
+          <h2>New Hunter signup (free tier)</h2>
+          <p><strong>${payload.name}</strong> just signed up for Hunter.</p>
           <hr>
           <p><strong>Email:</strong> ${payload.email}</p>
           ${payload.linkedin ? `<p><strong>LinkedIn:</strong> <a href="${payload.linkedin}">${payload.linkedin}</a></p>` : ""}
@@ -157,19 +122,19 @@ export async function submitHunterSignupAction(
           ${utm ? `<p><strong>UTM:</strong> ${utm}</p>` : ""}
           ${payload.referrer ? `<p><strong>Referrer:</strong> ${payload.referrer}</p>` : ""}
           <hr>
-          ${
-            checkoutUrl
-              ? `<p>✓ Stripe Checkout sent. Waiting on payment.</p>`
-              : `<p><strong>⚠ Stripe not configured.</strong> Send them a manual checkout link.</p>`
-          }
+          <p>Welcome email already sent. Status: <strong>active</strong>.</p>
           <p><a href="${siteUrl()}/app/admin/hunters">View in admin →</a></p>
           <p><small>Signup ID: ${inserted.id}.</small></p>
         `,
       });
     } catch (e) {
-      console.error("Failed to send hunter signup email", e);
+      console.error("Failed to send hunter admin notification", e);
     }
   }
 
-  return { success: true, id: inserted.id, checkout_url: checkoutUrl };
+  // Silence unused imports lint
+  void getStripe;
+  void HUNTER_PRICE_ID;
+
+  return { success: true, id: inserted.id };
 }

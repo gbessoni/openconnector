@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
-import { trackConversion } from "@/lib/track";
+import { trackStackLead } from "@/lib/track";
 
 interface FormState {
   name: string;
@@ -144,11 +144,14 @@ export function QualificationForm({
       if ("error" in res) {
         setError(res.error);
       } else {
-        // Fire conversion event BEFORE navigating so it's not cancelled
-        trackConversion({
-          eventName: "stack_lead_submit",
+        // Fire conversion BEFORE state transition so it's not cancelled
+        const [firstName, ...rest] = form.name.trim().split(/\s+/);
+        trackStackLead({
+          leadId: res.lead_id,
+          email: form.email,
+          firstName,
+          lastName: rest.join(" ") || undefined,
           value: 50,
-          transactionId: res.lead_id,
         });
         onSuccess(res.lead_id, res.lead_email, res.matches);
       }

@@ -1,7 +1,9 @@
 // Client-side conversion tracking helpers
 //
-// Fire these on meaningful conversion events (lead submit, checkout, etc).
-// If the ad platform isn't configured via env vars, calls are no-ops.
+// Fires Google Ads conversions with enhanced conversions (user_data) for
+// better match rates, plus GA4 + Meta Pixel events as available.
+
+import { getStoredClickIds } from "./click-attribution";
 
 declare global {
   interface Window {
@@ -11,47 +13,76 @@ declare global {
   }
 }
 
+export interface UserData {
+  email?: string;
+  phone?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export interface ConversionArgs {
   eventName: string;
+  label: string;               // Conversion label, e.g. "VOwoCO_qoaAcEM6snps-"
   value?: number;
   currency?: string;
   transactionId?: string | number;
-  // If you create multiple conversion actions in Google Ads, pass the
-  // specific label here (e.g. "AW-123/ABCxyz"). Falls back to env default.
-  sendTo?: string;
+  user?: UserData;
 }
 
-/**
- * Fires a Google Ads conversion + GA4 event + Meta Pixel "Lead" event.
- * Safe to call even if tracking isn't installed — each check gates itself.
- */
+function normalize(s?: string): string | undefined {
+  if (!s) return undefined;
+  return s.trim().toLowerCase();
+}
+
+function fullSendTo(label: string): string | null {
+  if (label.startsWith("AW-")) return label; // already full
+  const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+  if (!adsId) return null;
+  return `${adsId}/${label}`;
+}
+
+function setEnhancedConversionsUserData(user?: UserData): void {
+  if (!user || typeof window === "undefined" || !window.gtag) return;
+  const payload: Record<string, unknown> = {};
+  const email = normalize(user.email);
+  if (email) payload.email = email;
+  const phone = user.phone?.replace(/[^0-9+]/g, "");
+  if (phone) payload.phone_number = phone;
+  if (user.first_name || user.last_name) {
+    payload.address = {
+      first_name: normalize(user.first_name),
+      last_name: normalize(user.last_name),
+    };
+  }
+  if (Object.keys(payload).length > 0) {
+    try {
+      window.gtag("set", "user_data", payload);
+    } catch (e) {
+      if (process.env.NODE_ENV !== "production") console.warn("set user_data", e);
+    }
+  }
+}
+
 export function trackConversion(args: ConversionArgs): void {
   if (typeof window === "undefined") return;
 
-  const {
-    eventName,
-    value = 0,
-    currency = "USD",
-    transactionId,
-    sendTo,
-  } = args;
+  const { eventName, label, value = 0, currency = "USD", transactionId, user } = args;
+
+  // Set enhanced-conversions user_data BEFORE firing the conversion
+  setEnhancedConversionsUserData(user);
 
   // Google Ads (conversion)
   try {
-    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-    const label = sendTo || process.env.NEXT_PUBLIC_GOOGLE_ADS_STACK_LEAD_LABEL;
-    if (window.gtag && adsId && label) {
-      // label may be either "AW-ID/LABEL" or just "LABEL" — normalize
-      const fullLabel = label.startsWith("AW-") ? label : `${adsId}/${label}`;
+    const sendTo = fullSendTo(label);
+    if (window.gtag && sendTo) {
       window.gtag("event", "conversion", {
-        send_to: fullLabel,
+        send_to: sendTo,
         value,
         currency,
         transaction_id: transactionId ? String(transactionId) : undefined,
       });
     }
   } catch (e) {
-    // Never let tracking break the UX
     if (process.env.NODE_ENV !== "production") console.warn("trackConversion (ads)", e);
   }
 
@@ -78,17 +109,54 @@ export function trackConversion(args: ConversionArgs): void {
   }
 }
 
-export function trackPageView(path?: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-    const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-    if (!window.gtag) return;
-    [adsId, gaId].filter(Boolean).forEach((id) => {
-      window.gtag!("event", "page_view", {
-        send_to: id,
-        page_path: path,
-      });
-    });
-  } catch {}
+// ─── Convenience wrappers for our two configured conversions ───
+
+export function trackStackLead(args: {
+  leadId: number | string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  value?: number;
+}): void {
+  const label = process.env.NEXT_PUBLIC_GOOGLE_ADS_STACK_LEAD_LABEL;
+  if (!label) return;
+  trackConversion({
+    eventName: "stack_lead_submit",
+    label,
+    value: args.value ?? 50,
+    currency: "USD",
+    transactionId: args.leadId,
+    user: {
+      email: args.email,
+      first_name: args.firstName,
+      last_name: args.lastName,
+    },
+  });
 }
+
+export function trackHunterSignup(args: {
+  signupId: number | string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  value?: number;
+}): void {
+  const label = process.env.NEXT_PUBLIC_GOOGLE_ADS_HUNTER_LABEL;
+  if (!label) return;
+  trackConversion({
+    eventName: "hunter_signup",
+    label,
+    value: args.value ?? 49,
+    currency: "USD",
+    transactionId: args.signupId,
+    user: {
+      email: args.email,
+      first_name: args.firstName,
+      last_name: args.lastName,
+    },
+  });
+}
+
+// Expose stored click IDs to components that want to attach them to
+// server-side payloads (so lead records have gclid)
+export { getStoredClickIds };

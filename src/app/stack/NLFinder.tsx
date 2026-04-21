@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadNLAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
-import { trackConversion } from "@/lib/track";
+import { trackStackLead } from "@/lib/track";
 
 const EXAMPLES = [
   "20-person B2B SaaS, Series A, need banking + payroll + sales tax",
@@ -76,10 +76,13 @@ export function NLFinder({
       if ("error" in res) {
         setError(res.error);
       } else {
-        trackConversion({
-          eventName: "stack_lead_submit",
+        const [firstName, ...rest] = form.name.trim().split(/\s+/);
+        trackStackLead({
+          leadId: res.lead_id,
+          email: form.email,
+          firstName,
+          lastName: rest.join(" ") || undefined,
           value: 50,
-          transactionId: res.lead_id,
         });
         onSuccess(res.lead_id, res.lead_email, res.matches);
       }

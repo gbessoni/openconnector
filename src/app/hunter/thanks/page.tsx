@@ -41,8 +41,8 @@ export default function HunterThanksPage() {
           You&apos;re in.
         </h1>
         <p className="text-white/70 text-lg leading-relaxed mb-10">
-          Your subscription is active. Check your email for login credentials
-          and your first onboarding note.
+          Check your email for login credentials and your first onboarding
+          note. You can start submitting intros right away — no card required.
         </p>
 
         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-10 text-left">
