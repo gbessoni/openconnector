@@ -39,8 +39,6 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const FREE_PREVIEW_COUNT = 5;
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const row = await queryOne<PublicSearchRow>(
@@ -69,10 +67,6 @@ export default async function FindLeadsResultPage({ params }: PageProps) {
   ]).catch(() => {});
 
   const allResults = row.results_json || [];
-  const unlocked = !!row.unlocked;
-  const visible = unlocked ? allResults : allResults.slice(0, FREE_PREVIEW_COUNT);
-  const blurredCount = unlocked ? 0 : Math.max(0, allResults.length - FREE_PREVIEW_COUNT);
-
   const label = row.pdl_filters?.display_label || row.query_text;
 
   return (
@@ -116,28 +110,35 @@ export default async function FindLeadsResultPage({ params }: PageProps) {
           <ResultsView
             slug={row.slug}
             queryLabel={label}
-            visibleResults={visible}
-            blurredCount={blurredCount}
+            results={allResults}
             totalCount={allResults.length}
-            unlocked={unlocked}
-            unlockedResults={allResults}
           />
 
-          {/* Persistent Leapify pitch */}
+          {/* Upgrade CTA */}
           <div className="mt-10 bg-gray-900 text-white rounded-xl p-8 text-center">
             <h3 className="font-serif text-2xl md:text-3xl mb-3">
-              Cold leads convert at 1-2%. Warm intros convert at 40%+.
+              Want unlimited searches + pitch templates + guaranteed leads?
             </h3>
             <p className="text-gray-400 mb-6 max-w-xl mx-auto">
-              Leapify gets you warm introductions to 57 vetted vendors — and
-              pays you 30% of every closed deal from your network.
+              Hunter gets you unlimited ICP searches, pre-written pitch
+              templates for every vendor, and 1 qualified lead with a booked
+              meeting — guaranteed. $49/mo. 30% commission on every close.
             </p>
             <Link
-              href="/referral_connector.html"
+              href="/hunter"
               className="inline-block bg-accent hover:bg-accent-hover text-white px-6 py-3 rounded-full text-sm font-semibold transition-colors"
             >
-              Become a Leapify connector →
+              Join Hunter — $49/mo →
             </Link>
+            <p className="text-xs text-gray-500 mt-4">
+              Prefer to refer from your network instead?{" "}
+              <Link
+                href="/referral_connector.html"
+                className="underline hover:text-white"
+              >
+                Free Referral Partner program →
+              </Link>
+            </p>
           </div>
         </div>
       </main>

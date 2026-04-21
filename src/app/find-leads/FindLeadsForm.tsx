@@ -60,10 +60,10 @@ export function FindLeadsForm() {
           {upgrade && (
             <div className="mt-2">
               <Link
-                href="/referral_connector.html"
+                href="/hunter"
                 className="inline-block bg-accent hover:bg-accent-hover text-white px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
               >
-                Become a Leapify connector →
+                Join Hunter — $49/mo →
               </Link>
             </div>
           )}

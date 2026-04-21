@@ -42,7 +42,7 @@ export default function FindLeadsHomePage() {
           </div>
 
           <p className="text-xs text-gray-400 mt-4">
-            One free search per visitor. Unlimited access for Leapify connectors.
+            3 free searches per day · No signup · Full results, no paywall
           </p>
         </div>
       </section>
@@ -61,13 +61,13 @@ export default function FindLeadsHomePage() {
             />
             <Step
               n="2"
-              title="See 5 leads instantly"
-              body="We run your ICP against the People Data Labs graph. Preview the first 5 for free — real names, titles, LinkedIn URLs."
+              title="Get 25 real leads instantly"
+              body="We run your ICP against the 810M-person People Data Labs graph. Real names, titles, companies, LinkedIn URLs."
             />
             <Step
               n="3"
-              title="Share to unlock 20 more"
-              body="Post once on X or LinkedIn and unlock the full 25-person list with CSV download."
+              title="Full list + CSV download"
+              body="All 25 prospects with LinkedIn URLs. Nothing blurred, no share wall, no signup."
             />
           </div>
         </div>
@@ -90,24 +90,31 @@ export default function FindLeadsHomePage() {
         </div>
       </section>
 
-      {/* Leapify pitch */}
+      {/* Hunter upsell */}
       <section className="bg-gray-900 text-white px-6 py-20">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="font-serif text-3xl md:text-4xl mb-4">
-            Want warm intros instead of cold leads?
+            Ready to go pro?
           </h2>
-          <p className="text-gray-400 mb-8 leading-relaxed">
-            This tool gives you contact data. Leapify gets you{" "}
-            <span className="text-white font-semibold">warm introductions</span>{" "}
-            to 57 vetted vendors — and pays you 30% of every closed deal from
-            your network.
+          <p className="text-gray-400 mb-2 leading-relaxed">
+            This free tool is for casual research. If you hunt leads
+            professionally, Hunter gives you:
           </p>
+          <ul className="text-gray-300 text-sm mb-8 space-y-1">
+            <li>✓ Unlimited ICP searches</li>
+            <li>✓ Pre-written pitch templates for every vendor</li>
+            <li>✓ 1 qualified SQL + meeting booked per month, guaranteed</li>
+            <li>✓ 30% commission on every closed deal ($135–$1,125/intro)</li>
+          </ul>
           <Link
-            href="/referral_connector.html"
+            href="/hunter"
             className="inline-block bg-accent hover:bg-accent-hover text-white px-6 py-3 rounded-full font-semibold transition-colors"
           >
-            Become a Leapify connector →
+            Join Hunter — $49/mo →
           </Link>
+          <p className="text-xs text-gray-500 mt-4">
+            Or just keep using the free tool. No pressure.
+          </p>
         </div>
       </section>
     </div>

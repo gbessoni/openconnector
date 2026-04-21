@@ -8,6 +8,7 @@ import { searchPeople, toProspectInsert } from "@/lib/pdl";
 
 const DAILY_CREDIT_CAP = 500; // ~$25/day at $0.05/credit. Raise when revenue justifies.
 const RESULTS_PER_SEARCH = 25;
+const MAX_SEARCHES_PER_IP_PER_DAY = 3;
 
 function slugify(label: string): string {
   return (
@@ -54,12 +55,15 @@ async function recordSpend(credits: number): Promise<void> {
   );
 }
 
-async function getIpUsage(ip: string): Promise<number> {
-  const row = await queryOne<{ search_count: number }>(
-    `SELECT search_count FROM find_leads_usage WHERE ip = $1`,
+// Count searches made by this IP in the last 24 hours.
+// Used for abuse prevention only — not a paywall.
+async function getSearchesLast24h(ip: string): Promise<number> {
+  const row = await queryOne<{ count: number }>(
+    `SELECT COUNT(*)::int AS count FROM public_searches
+     WHERE created_by_ip = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
     [ip]
   );
-  return row?.search_count ?? 0;
+  return row?.count ?? 0;
 }
 
 async function bumpIpUsage(ip: string): Promise<void> {
@@ -86,19 +90,19 @@ export async function searchLeadsAction(formData: FormData) {
     hdrs.get("x-real-ip") ||
     "unknown";
 
-  // Gate: one free search per IP
-  const used = await getIpUsage(ip);
-  if (used >= 1) {
+  // Abuse prevention: cap searches per IP per day
+  const recent = await getSearchesLast24h(ip);
+  if (recent >= MAX_SEARCHES_PER_IP_PER_DAY) {
     return {
-      error: "You've used your free search. Join Leapify as a connector for unlimited access.",
+      error: `You've used your ${MAX_SEARCHES_PER_IP_PER_DAY} free searches today. Join Hunter for $49/mo and get unlimited searches plus pitch templates and guaranteed leads.`,
       upgrade: true,
     };
   }
 
-  // Cost cap
+  // Daily global cost cap — separate from per-user rate limit
   if (!(await hasCapacity(RESULTS_PER_SEARCH))) {
     return {
-      error: "We hit today's free-tool limit. Come back tomorrow, or join as a connector for unlimited access.",
+      error: "Our free tool hit today's capacity limit. Come back tomorrow, or skip the line with Hunter ($49/mo — unlimited searches).",
       upgrade: true,
     };
   }
@@ -149,8 +153,9 @@ export async function searchLeadsAction(formData: FormData) {
 
   await query(
     `INSERT INTO public_searches (slug, query_text, pdl_filters, results_json,
-       pdl_total, pdl_returned, pdl_credits_used, created_by_ip)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+       pdl_total, pdl_returned, pdl_credits_used, created_by_ip,
+       unlocked, unlock_method, unlocked_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8, TRUE, 'free', NOW())`,
     [
       slug,
       nl,
