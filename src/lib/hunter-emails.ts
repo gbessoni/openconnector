@@ -83,17 +83,30 @@ const FOOTER = `
 // Email templates
 // ─────────────────────────────────────────────────────────────
 
-function welcomeHtml(firstName: string): string {
+function welcomeHtml(firstName: string, email: string, tempPassword: string | null): string {
+  const credsBlock = tempPassword
+    ? `
+      <div style="background:#f5f5f5;border-left:3px solid #00aa5e;padding:14px 18px;margin:20px 0;font-size:14px">
+        <div style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Your login</div>
+        <div><strong>Email:</strong> ${email}</div>
+        <div><strong>Temporary password:</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:14px">${tempPassword}</code></div>
+        <div style="color:#666;font-size:12px;margin-top:6px">Change it after you log in.</div>
+      </div>`
+    : `
+      <p>You already have a Leapify account — use your existing password to log in.</p>`;
+
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a1a;max-width:560px">
       <h1 style="font-size:24px;margin:0 0 20px">Welcome to Hunter, ${firstName}.</h1>
-      <p>You're in. Here's exactly what to do in the next 48 hours:</p>
+      <p>You're in. Here's how to make your first intro in the next 60 seconds:</p>
+      ${credsBlock}
       <ol>
-        <li><strong>Log into the platform</strong> → <a href="${SITE}/app/login" style="color:#00aa5e;font-weight:600">leapify.xyz/app/login</a>. You'll get a separate email with login credentials.</li>
-        <li><strong>Review the vendor list</strong>. Pick 3-5 where you already know the ICP. That's where your first intros come from.</li>
-        <li><strong>Check your inbox in 2 days</strong> — I'll send the first pitch template.</li>
+        <li><strong>Log in</strong> → <a href="${SITE}/app/login" style="color:#00aa5e;font-weight:600">leapify.xyz/app/login</a></li>
+        <li><strong>Browse the Companies tab</strong> — 57 vetted vendors, each with their ICP and payout</li>
+        <li><strong>Pick 2-3 vendors where you already know the ICP</strong> — that's where your first intros come from</li>
+        <li><strong>Submit an intro</strong> — I handle the rest, you earn 30% when it closes</li>
       </ol>
-      <p>One thing that matters: hunters who close in month 1 are the ones who pick <em>3 vendors</em> and focus. Don't try to pitch all 57.</p>
+      <p>Tip: hunters who close in month 1 pick a narrow lane and focus. Don't try to pitch all 57 at once.</p>
       <p style="margin-top:24px"><strong>— Greg</strong></p>
       ${FOOTER}
     </div>`;
@@ -173,7 +186,10 @@ function guaranteeHtml(firstName: string): string {
 // Public API
 // ─────────────────────────────────────────────────────────────
 
-export async function sendHunterWelcomeEmail(hunterId: number): Promise<void> {
+export async function sendHunterWelcomeEmail(
+  hunterId: number,
+  tempPassword: string | null = null
+): Promise<void> {
   const hunter = await queryOne<HunterForEmail>(
     `SELECT id, name, email, last_paid_at, status FROM hunter_signups WHERE id = $1`,
     [hunterId]
@@ -185,8 +201,8 @@ export async function sendHunterWelcomeEmail(hunterId: number): Promise<void> {
   const firstName = hunter.name.split(" ")[0] || hunter.name;
   const id = await sendEmail(
     hunter.email,
-    `Welcome to Hunter — start here`,
-    welcomeHtml(firstName)
+    `Welcome to Hunter — your login is inside`,
+    welcomeHtml(firstName, hunter.email, tempPassword)
   );
   await recordSent(hunter.id, SEQUENCE_KEYS.DAY_0_WELCOME, id);
 }

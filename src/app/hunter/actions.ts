@@ -1,7 +1,17 @@
 "use server";
 
 import { query, queryOne } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
 import { getStripe, HUNTER_PRICE_ID, siteUrl } from "@/lib/stripe";
+
+function randomPassword(len = 12): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < len; i++) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
+}
 
 export interface HunterSignupPayload {
   name: string;
@@ -75,16 +85,48 @@ export async function submitHunterSignupAction(
   );
   if (!inserted) return { error: "Failed to save signup." };
 
-  // Mark them active immediately — free tier
-  await query(
-    `UPDATE hunter_signups SET status = 'active', updated_at = NOW() WHERE id = $1`,
-    [inserted.id]
+  // Find or create a user record so they can actually log into /app.
+  // Hunter signups are free and instant — no approval step, unlike
+  // connector_applications. If the email already has a user (e.g. they
+  // were approved earlier via the Referral Partner flow), link to that
+  // existing row instead of creating a duplicate.
+  const emailLower = payload.email.toLowerCase();
+  const existingUser = await queryOne<{ id: number }>(
+    `SELECT id FROM users WHERE lower(email) = $1`,
+    [emailLower]
   );
 
-  // Fire Day 0 welcome email via the same helper used by the Stripe webhook
+  let userId: number;
+  let tempPassword: string | null = null;
+
+  if (existingUser) {
+    userId = existingUser.id;
+  } else {
+    tempPassword = randomPassword(12);
+    const hash = await hashPassword(tempPassword);
+    const created = await queryOne<{ id: number }>(
+      `INSERT INTO users (email, password_hash, name, role)
+       VALUES ($1, $2, $3, 'connector') RETURNING id`,
+      [emailLower, hash, payload.name]
+    );
+    if (!created) {
+      return { error: "Failed to create user account." };
+    }
+    userId = created.id;
+  }
+
+  // Mark active + link the hunter signup to the user account
+  await query(
+    `UPDATE hunter_signups
+     SET status = 'active', created_user_id = $1, updated_at = NOW()
+     WHERE id = $2`,
+    [userId, inserted.id]
+  );
+
+  // Fire Day 0 welcome email with credentials
   try {
     const { sendHunterWelcomeEmail } = await import("@/lib/hunter-emails");
-    await sendHunterWelcomeEmail(inserted.id);
+    await sendHunterWelcomeEmail(inserted.id, tempPassword);
   } catch (e) {
     console.error("Failed to send hunter welcome email", e);
   }
