@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Vendor } from "./leads";
+import type { PDLSearchFilters } from "./pdl";
 
 let _client: Anthropic | null = null;
 
@@ -12,6 +13,96 @@ function getClient(): Anthropic {
 }
 
 const MODEL = "claude-haiku-4-5";
+
+const COMPANY_SIZE_BUCKETS = [
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "501-1000",
+  "1001-5000",
+  "5001-10000",
+  "10001+",
+] as const;
+
+const NL_PARSE_SYSTEM = `You convert natural-language ICP descriptions into People Data Labs (PDL) search filters.
+
+Output strict JSON with this shape:
+{
+  "titles": ["fractional cfo", "head of finance"],           // job titles (lowercase, max 6)
+  "countries": ["united states"],                             // lowercase country names (max 3)
+  "company_sizes": ["51-200", "201-500"],                     // exact buckets only
+  "industries": ["software", "saas"],                         // broad industry keywords (max 4)
+  "display_label": "Fractional CFOs at SaaS companies 50-500 employees in US"
+}
+
+Rules:
+- All title/country/industry values MUST be lowercase.
+- company_sizes MUST be from: "1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+".
+- Include at least one title. If user is vague, infer 2-3 likely titles.
+- Infer size buckets from stage keywords: "startup"/"seed" → 1-10, 11-50; "series a" → 11-50, 51-200; "series b/c" → 51-200, 201-500; "mid-market" → 201-500, 501-1000.
+- Default country to "united states" if unspecified.
+- display_label is a human-readable summary, Title Case.
+- Do NOT wrap in markdown fences. Return only JSON.`;
+
+export async function parseICPQuery(
+  nl: string
+): Promise<{ filters: PDLSearchFilters; display_label: string }> {
+  const client = getClient();
+
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 600,
+    system: NL_PARSE_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: `ICP description: "${nl}"\n\nReturn only JSON.`,
+      },
+    ],
+  });
+
+  const textBlock = res.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("No text in Claude response");
+  }
+  let raw = textBlock.text.trim();
+  if (raw.startsWith("```")) {
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
+  }
+
+  let parsed: {
+    titles?: string[];
+    countries?: string[];
+    company_sizes?: string[];
+    industries?: string[];
+    display_label?: string;
+  };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Claude returned invalid JSON for ICP parse");
+  }
+
+  // Sanitize
+  const titles = (parsed.titles ?? []).slice(0, 6).filter((s) => typeof s === "string");
+  const countries = (parsed.countries ?? []).slice(0, 3).filter((s) => typeof s === "string");
+  const company_sizes = (parsed.company_sizes ?? []).filter((s) =>
+    (COMPANY_SIZE_BUCKETS as readonly string[]).includes(s)
+  );
+  const industries = (parsed.industries ?? []).slice(0, 4).filter((s) => typeof s === "string");
+
+  return {
+    filters: {
+      titles: titles.length ? titles : undefined,
+      countries: countries.length ? countries : undefined,
+      company_sizes: company_sizes.length ? company_sizes : undefined,
+      industries: industries.length ? industries : undefined,
+      size: 25,
+    },
+    display_label: parsed.display_label || nl,
+  };
+}
 
 export interface StackPick {
   category: string;
