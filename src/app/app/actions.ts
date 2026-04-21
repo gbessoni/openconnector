@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { randomBytes } from "crypto";
+import { Resend } from "resend";
 import {
   authenticate,
   createSession,
@@ -8,7 +10,7 @@ import {
   createUser,
   getSession,
 } from "@/lib/auth";
-import { query } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function loginAction(formData: FormData) {
@@ -357,5 +359,162 @@ export async function addNoteAction(formData: FormData) {
   );
 
   revalidatePath(`/app/leads/${leadId}`);
+  return { success: true };
+}
+
+function generateTempPassword(): string {
+  return randomBytes(9).toString("base64url");
+}
+
+async function sendApplicantEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.warn("RESEND_API_KEY not set; skipping applicant email to", to);
+    return;
+  }
+  const resend = new Resend(resendKey);
+  await resend.emails.send({
+    from: "Leapify <onboarding@resend.dev>",
+    to,
+    subject,
+    html,
+  });
+}
+
+export async function approveConnectorApplicationAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const id = Number(formData.get("id"));
+  const note = String(formData.get("note") || "").trim();
+  if (!id) return { error: "Missing application id" };
+
+  const app = await queryOne<{
+    id: number;
+    name: string;
+    email: string;
+    status: string;
+  }>(
+    `SELECT id, name, email, status FROM connector_applications WHERE id = $1`,
+    [id]
+  );
+  if (!app) return { error: "Application not found" };
+  if (app.status !== "pending") {
+    return { error: `Application already ${app.status}` };
+  }
+
+  const existing = await queryOne<{ id: number }>(
+    `SELECT id FROM users WHERE lower(email) = lower($1)`,
+    [app.email]
+  );
+
+  let createdUserId: number;
+  let tempPassword: string | null = null;
+
+  if (existing) {
+    createdUserId = existing.id;
+  } else {
+    tempPassword = generateTempPassword();
+    const newUser = await createUser(
+      app.email,
+      tempPassword,
+      app.name,
+      "connector"
+    );
+    createdUserId = newUser.id;
+  }
+
+  await query(
+    `UPDATE connector_applications SET
+       status = 'approved',
+       reviewer_id = $1,
+       reviewed_at = NOW(),
+       review_note = $2,
+       created_user_id = $3,
+       updated_at = NOW()
+     WHERE id = $4`,
+    [session.id, note || null, createdUserId, id]
+  );
+
+  const appUrl = process.env.APP_URL || "";
+  const loginLink = appUrl ? `${appUrl}/app/login` : "/app/login";
+  const credentialsBlock = tempPassword
+    ? `<p>Your temporary password: <code>${tempPassword}</code></p>
+       <p>Please change it after your first login.</p>`
+    : `<p>You already have an account on file — sign in with your existing password.</p>`;
+
+  try {
+    await sendApplicantEmail(
+      app.email,
+      "You're approved as a Leapify connector",
+      `<h2>Welcome to Leapify, ${app.name}!</h2>
+       <p>Your application has been approved.</p>
+       ${credentialsBlock}
+       <p><a href="${loginLink}">Sign in here</a></p>
+       ${note ? `<hr><p><em>${note}</em></p>` : ""}`
+    );
+  } catch (err) {
+    console.error("Approval email failed:", err);
+  }
+
+  revalidatePath("/app/admin/applications");
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
+export async function declineConnectorApplicationAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const id = Number(formData.get("id"));
+  const note = String(formData.get("note") || "").trim();
+  if (!id) return { error: "Missing application id" };
+
+  const app = await queryOne<{
+    id: number;
+    name: string;
+    email: string;
+    status: string;
+  }>(
+    `SELECT id, name, email, status FROM connector_applications WHERE id = $1`,
+    [id]
+  );
+  if (!app) return { error: "Application not found" };
+  if (app.status !== "pending") {
+    return { error: `Application already ${app.status}` };
+  }
+
+  await query(
+    `UPDATE connector_applications SET
+       status = 'declined',
+       reviewer_id = $1,
+       reviewed_at = NOW(),
+       review_note = $2,
+       updated_at = NOW()
+     WHERE id = $3`,
+    [session.id, note || null, id]
+  );
+
+  try {
+    await sendApplicantEmail(
+      app.email,
+      "Update on your Leapify connector application",
+      `<p>Hi ${app.name},</p>
+       <p>Thanks for applying to become a Leapify connector. After review, we're not moving forward at this time.</p>
+       ${note ? `<p>${note}</p>` : ""}
+       <p>— Leapify</p>`
+    );
+  } catch (err) {
+    console.error("Decline email failed:", err);
+  }
+
+  revalidatePath("/app/admin/applications");
+  revalidatePath("/app/admin");
   return { success: true };
 }

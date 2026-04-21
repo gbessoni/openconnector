@@ -40,6 +40,11 @@ export default async function AdminPage() {
      LIMIT 200`
   );
 
+  const pendingApps = await query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count FROM connector_applications WHERE status = 'pending'`
+  );
+  const pendingAppsCount = pendingApps[0]?.count ?? 0;
+
   const totalPaid = leads.reduce((s, l) => s + (l.actual_payout ?? 0), 0);
 
   return (
@@ -53,6 +58,21 @@ export default async function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/app/admin/applications"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pendingAppsCount > 0
+                  ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+              }`}
+            >
+              📨 Applications
+              {pendingAppsCount > 0 && (
+                <span className="ml-2 inline-block bg-amber-600 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
+                  {pendingAppsCount}
+                </span>
+              )}
+            </Link>
             <Link
               href="/app/admin/messages"
               className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
@@ -69,8 +89,9 @@ export default async function AdminPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Stat label="Connectors" value={users.filter((u) => u.role === "connector").length} />
+          <Stat label="Pending apps" value={pendingAppsCount} />
           <Stat label="Total leads" value={leads.length} />
           <Stat
             label="Won"
