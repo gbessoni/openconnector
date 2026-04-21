@@ -44,48 +44,42 @@ export interface PDLSearchResult {
 function buildQuery(filters: PDLSearchFilters): Record<string, unknown> {
   const must: Record<string, unknown>[] = [];
 
+  // Titles: bool/should with match_phrase (OR logic; default is match-at-least-one
+  // when there's no sibling must — PDL doesn't accept minimum_should_match)
   if (filters.titles && filters.titles.length > 0) {
     must.push({
       bool: {
         should: filters.titles.map((t) => ({
           match_phrase: { job_title: t.toLowerCase() },
         })),
-        minimum_should_match: 1,
       },
     });
   } else if (filters.title_keywords) {
     must.push({ match: { job_title: filters.title_keywords.toLowerCase() } });
   }
 
+  // Countries: terms is a native OR filter
   if (filters.countries && filters.countries.length > 0) {
     must.push({
-      bool: {
-        should: filters.countries.map((c) => ({
-          term: { location_country: c.toLowerCase() },
-        })),
-        minimum_should_match: 1,
+      terms: {
+        location_country: filters.countries.map((c) => c.toLowerCase()),
       },
     });
   }
 
   if (filters.company_sizes && filters.company_sizes.length > 0) {
     must.push({
-      bool: {
-        should: filters.company_sizes.map((s) => ({
-          term: { job_company_size: s },
-        })),
-        minimum_should_match: 1,
-      },
+      terms: { job_company_size: filters.company_sizes },
     });
   }
 
+  // Industries: bool/should with match_phrase
   if (filters.industries && filters.industries.length > 0) {
     must.push({
       bool: {
         should: filters.industries.map((i) => ({
           match_phrase: { industry: i.toLowerCase() },
         })),
-        minimum_should_match: 1,
       },
     });
   }
