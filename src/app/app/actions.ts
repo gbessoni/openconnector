@@ -245,6 +245,144 @@ export async function bulkImportLeadsAction(formData: FormData) {
   return { inserted, skipped };
 }
 
+function randomPassword(len = 12): string {
+  const alphabet =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < len; i++) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
+}
+
+export async function approveApplicationAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const appId = Number(formData.get("application_id"));
+  if (!appId) return { error: "Missing application id" };
+
+  const app = await query<{
+    id: number;
+    name: string;
+    email: string;
+    status: string;
+    created_user_id: number | null;
+  }>(
+    `SELECT id, name, email, status, created_user_id FROM connector_applications WHERE id = $1`,
+    [appId]
+  );
+  if (!app[0]) return { error: "Application not found" };
+  if (app[0].status === "approved") {
+    return { error: "Already approved" };
+  }
+
+  const email = app[0].email.trim().toLowerCase();
+
+  // Check if user already exists
+  const existing = await query<{ id: number }>(
+    `SELECT id FROM users WHERE lower(email) = $1`,
+    [email]
+  );
+
+  let userId: number;
+  let tempPassword: string | null = null;
+
+  if (existing[0]) {
+    userId = existing[0].id;
+  } else {
+    // Create the user account
+    const { hashPassword } = await import("@/lib/auth");
+    tempPassword = randomPassword(12);
+    const hash = await hashPassword(tempPassword);
+    const created = await query<{ id: number }>(
+      `INSERT INTO users (email, password_hash, name, role)
+       VALUES ($1, $2, $3, 'connector') RETURNING id`,
+      [email, hash, app[0].name]
+    );
+    userId = created[0].id;
+  }
+
+  // Update the application
+  await query(
+    `UPDATE connector_applications
+     SET status = 'approved',
+         reviewer_id = $1,
+         reviewed_at = NOW(),
+         created_user_id = $2,
+         updated_at = NOW()
+     WHERE id = $3`,
+    [session.id, userId, appId]
+  );
+
+  // Email the applicant
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    const { Resend } = await import("resend");
+    const resend = new Resend(resendKey);
+    const bodyParts: string[] = [
+      `<h2>You're approved, ${app[0].name.split(" ")[0]}!</h2>`,
+      `<p>You're now a Leapify referral partner. You can start submitting leads right away.</p>`,
+      `<p><strong>Login:</strong> <a href="https://www.leapify.xyz/app/login">https://www.leapify.xyz/app/login</a></p>`,
+      `<p><strong>Email:</strong> ${email}</p>`,
+    ];
+    if (tempPassword) {
+      bodyParts.push(
+        `<p><strong>Temporary password:</strong> <code>${tempPassword}</code></p>`,
+        `<p>Log in and change your password under Settings.</p>`
+      );
+    } else {
+      bodyParts.push(
+        `<p>Your existing account password still works — just sign in.</p>`
+      );
+    }
+    bodyParts.push(
+      `<hr>`,
+      `<p><small>Questions? Reply to this email.</small></p>`
+    );
+
+    try {
+      await resend.emails.send({
+        from: "Leapify <onboarding@resend.dev>",
+        to: email,
+        subject: "You're approved — welcome to Leapify",
+        html: bodyParts.join("\n"),
+      });
+    } catch (e) {
+      console.error("Failed to send approval email:", e);
+    }
+  }
+
+  revalidatePath("/app/admin/applications");
+  revalidatePath("/app/admin");
+  return { success: true };
+}
+
+export async function declineApplicationAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const appId = Number(formData.get("application_id"));
+  const note = String(formData.get("note") || "").trim() || null;
+  if (!appId) return { error: "Missing application id" };
+
+  await query(
+    `UPDATE connector_applications
+     SET status = 'declined',
+         reviewer_id = $1,
+         reviewed_at = NOW(),
+         review_note = $2,
+         updated_at = NOW()
+     WHERE id = $3`,
+    [session.id, note, appId]
+  );
+
+  revalidatePath("/app/admin/applications");
+  return { success: true };
+}
+
 export async function updateVendorAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/app/login");
@@ -285,8 +423,9 @@ export async function updateVendorAction(formData: FormData) {
       commission_notes = $12,
       email = $13,
       website = $14,
+      country = $15,
       updated_at = NOW()
-     WHERE id = $15`,
+     WHERE id = $16`,
     [
       name,
       get("category"),
@@ -302,6 +441,7 @@ export async function updateVendorAction(formData: FormData) {
       get("commission_notes"),
       get("email"),
       get("website"),
+      get("country"),
       id,
     ]
   );

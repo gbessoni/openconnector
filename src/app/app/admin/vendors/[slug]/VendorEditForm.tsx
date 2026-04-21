@@ -128,6 +128,12 @@ export function VendorEditForm({ vendor }: { vendor: Vendor }) {
             defaultValue={vendor.website || ""}
           />
         </div>
+        <Field
+          label="Country"
+          name="country"
+          defaultValue={vendor.country || ""}
+          placeholder="e.g. United States, Canada, UK"
+        />
       </Section>
 
       {error && (

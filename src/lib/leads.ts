@@ -63,6 +63,7 @@ export interface Vendor {
   commission_notes: string | null;
   email: string | null;
   website: string | null;
+  country: string | null;
   status: string;
   created_at: string;
   updated_at: string;

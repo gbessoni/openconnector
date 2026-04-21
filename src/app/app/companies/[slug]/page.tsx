@@ -105,6 +105,35 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             </p>
           )}
 
+          {/* Public contact info: website + country visible to all */}
+          {(websiteUrl || v.country) && (
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-600 pt-4 border-t border-gray-100">
+              {websiteUrl && (
+                <a
+                  href={websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-indigo-600 hover:underline"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>
+                  </svg>
+                  {v.website}
+                </a>
+              )}
+              {v.country && (
+                <span className="inline-flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  {v.country}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 flex gap-3">
             <Link
               href={`/app/leads/new?vendor=${encodeURIComponent(v.name)}`}
@@ -203,21 +232,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card title="Vendor contact (admin only)">
               <DetailRow label="Email" value={v.email} />
-              <DetailRow
-                label="Website"
-                value={
-                  websiteUrl ? (
-                    <a
-                      href={websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline"
-                    >
-                      {v.website}
-                    </a>
-                  ) : null
-                }
-              />
+              <DetailRow label="Country" value={v.country} />
             </Card>
 
             <Card title="Vendor economics (admin only)">
