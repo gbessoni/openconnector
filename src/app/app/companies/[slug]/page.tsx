@@ -57,12 +57,20 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             ← Back to companies
           </Link>
           {isAdmin && (
-            <Link
-              href={`/app/admin/vendors/${v.slug}`}
-              className="text-xs font-medium bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              ✎ Edit vendor
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/app/admin/vendors/${v.slug}/prospects`}
+                className="text-xs font-medium bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors"
+              >
+                🔍 Find prospects
+              </Link>
+              <Link
+                href={`/app/admin/vendors/${v.slug}`}
+                className="text-xs font-medium bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ✎ Edit vendor
+              </Link>
+            </div>
           )}
         </div>
 

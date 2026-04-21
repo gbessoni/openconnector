@@ -245,6 +245,140 @@ export async function bulkImportLeadsAction(formData: FormData) {
   return { inserted, skipped };
 }
 
+export async function searchProspectsAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const vendorId = Number(formData.get("vendor_id"));
+  if (!vendorId) return { error: "Missing vendor" };
+
+  const titlesRaw = String(formData.get("titles") || "").trim();
+  const countriesRaw = String(formData.get("countries") || "").trim();
+  const sizesRaw = String(formData.get("company_sizes") || "").trim();
+  const industriesRaw = String(formData.get("industries") || "").trim();
+  const size = Math.min(Math.max(Number(formData.get("size")) || 25, 1), 100);
+
+  const titles = titlesRaw
+    ? titlesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const countries = countriesRaw
+    ? countriesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const company_sizes = sizesRaw
+    ? sizesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const industries = industriesRaw
+    ? industriesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  if (titles.length === 0 && !titlesRaw) {
+    return { error: "At least one title is required" };
+  }
+
+  const { searchPeople, toProspectInsert } = await import("@/lib/pdl");
+
+  let result;
+  try {
+    result = await searchPeople({
+      titles,
+      countries,
+      company_sizes,
+      industries,
+      size,
+    });
+  } catch (e) {
+    console.error("PDL search failed", e);
+    return { error: "PDL search failed — check server logs" };
+  }
+
+  if (result.status !== 200 && result.status !== 404) {
+    return {
+      error:
+        result.error?.message ||
+        `PDL returned status ${result.status}`,
+    };
+  }
+
+  const people = result.data || [];
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const p of people) {
+    const row = toProspectInsert(p);
+    if (!row) {
+      skipped++;
+      continue;
+    }
+    try {
+      await query(
+        `INSERT INTO prospects
+         (vendor_id, pdl_id, full_name, job_title, job_company_name, job_company_website,
+          job_company_size, industry, linkedin_url, twitter_url, location_name, location_country,
+          work_email_available, raw_data)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         ON CONFLICT (vendor_id, pdl_id) DO NOTHING`,
+        [
+          vendorId,
+          row.pdl_id,
+          row.full_name,
+          row.job_title,
+          row.job_company_name,
+          row.job_company_website,
+          row.job_company_size,
+          row.industry,
+          row.linkedin_url,
+          row.twitter_url,
+          row.location_name,
+          row.location_country,
+          row.work_email_available,
+          JSON.stringify(row.raw_data),
+        ]
+      );
+      inserted++;
+    } catch (e) {
+      console.error("Insert prospect failed", e);
+      skipped++;
+    }
+  }
+
+  // Get vendor slug to revalidate
+  const vendorRow = await query<{ slug: string }>(
+    `SELECT slug FROM vendors WHERE id = $1`,
+    [vendorId]
+  );
+  if (vendorRow[0]?.slug) {
+    revalidatePath(`/app/admin/vendors/${vendorRow[0].slug}/prospects`);
+  }
+
+  return { success: true, found: people.length, inserted, skipped, total: result.total };
+}
+
+export async function updateProspectStatusAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/app/login");
+  if (session.role !== "admin") return { error: "Admin only" };
+
+  const id = Number(formData.get("id"));
+  const status = String(formData.get("status") || "").trim();
+  const allowed = ["new", "queued", "contacted", "replied", "declined", "converted"];
+  if (!id || !allowed.includes(status)) return { error: "Invalid input" };
+
+  const extra =
+    status === "contacted"
+      ? ", contacted_at = NOW()"
+      : status === "replied"
+      ? ", replied_at = NOW()"
+      : "";
+
+  await query(
+    `UPDATE prospects SET status = $1, updated_at = NOW() ${extra} WHERE id = $2`,
+    [status, id]
+  );
+
+  return { success: true };
+}
+
 function randomPassword(len = 12): string {
   const alphabet =
     "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
