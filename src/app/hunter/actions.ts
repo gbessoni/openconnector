@@ -1,6 +1,7 @@
 "use server";
 
 import { query, queryOne } from "@/lib/db";
+import { getStripe, HUNTER_PRICE_ID, siteUrl } from "@/lib/stripe";
 
 export interface HunterSignupPayload {
   name: string;
@@ -18,7 +19,10 @@ export interface HunterSignupPayload {
 
 export async function submitHunterSignupAction(
   formData: FormData
-): Promise<{ success: true; id: number } | { error: string }> {
+): Promise<
+  | { success: true; id: number; checkout_url?: string }
+  | { error: string }
+> {
   const get = (k: string) => String(formData.get(k) || "").trim();
 
   const payload: HunterSignupPayload = {
@@ -41,8 +45,11 @@ export async function submitHunterSignupAction(
   }
 
   // Check duplicate
-  const existing = await queryOne<{ id: number }>(
-    `SELECT id FROM hunter_signups WHERE lower(email) = lower($1) AND status NOT IN ('cancelled','refunded') LIMIT 1`,
+  const existing = await queryOne<{ id: number; status: string }>(
+    `SELECT id, status FROM hunter_signups
+     WHERE lower(email) = lower($1)
+       AND status NOT IN ('cancelled','refunded')
+     LIMIT 1`,
     [payload.email]
   );
   if (existing) {
@@ -71,9 +78,53 @@ export async function submitHunterSignupAction(
   );
   if (!inserted) return { error: "Failed to save signup." };
 
-  // Email Greg
+  // Always notify admin even if Stripe isn't set up yet
   const resendKey = process.env.RESEND_API_KEY;
   const notificationEmail = process.env.NOTIFICATION_EMAIL;
+
+  // Create Stripe Checkout Session
+  let checkoutUrl: string | undefined;
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+  if (stripeKey && HUNTER_PRICE_ID) {
+    try {
+      const stripe = getStripe();
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        customer_email: payload.email.toLowerCase(),
+        line_items: [{ price: HUNTER_PRICE_ID, quantity: 1 }],
+        success_url: `${siteUrl()}/hunter/thanks?signup_id=${inserted.id}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl()}/hunter?cancelled=1`,
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            hunter_signup_id: String(inserted.id),
+          },
+        },
+        metadata: {
+          hunter_signup_id: String(inserted.id),
+          utm_source: payload.utm_source || "",
+          utm_campaign: payload.utm_campaign || "",
+          background: payload.background || "",
+        },
+      });
+
+      checkoutUrl = session.url || undefined;
+
+      // Mark as checkout sent and store session id for webhook correlation
+      await query(
+        `UPDATE hunter_signups SET status = 'checkout_sent', updated_at = NOW() WHERE id = $1`,
+        [inserted.id]
+      );
+    } catch (e) {
+      console.error("Stripe checkout create failed", e);
+      // Don't fail the whole flow — they'll get a manual follow-up email
+      checkoutUrl = undefined;
+    }
+  }
+
+  // Email Greg regardless
   if (resendKey && notificationEmail) {
     try {
       const { Resend } = await import("resend");
@@ -92,9 +143,11 @@ export async function submitHunterSignupAction(
       await resend.emails.send({
         from: "Leapify Hunter <onboarding@resend.dev>",
         to: notificationEmail,
-        subject: `🎯 Hunter signup: ${payload.name} — $49/mo pending`,
+        subject: checkoutUrl
+          ? `🎯 Hunter signup: ${payload.name} — checkout started`
+          : `🎯 Hunter signup: ${payload.name} — needs manual checkout link`,
         html: `
-          <h2>New Hunter signup (payment pending)</h2>
+          <h2>New Hunter signup</h2>
           <p><strong>${payload.name}</strong> wants to join the Hunter tier.</p>
           <hr>
           <p><strong>Email:</strong> ${payload.email}</p>
@@ -104,7 +157,13 @@ export async function submitHunterSignupAction(
           ${utm ? `<p><strong>UTM:</strong> ${utm}</p>` : ""}
           ${payload.referrer ? `<p><strong>Referrer:</strong> ${payload.referrer}</p>` : ""}
           <hr>
-          <p><strong>Next step:</strong> Send them the Stripe checkout link. Signup ID: ${inserted.id}.</p>
+          ${
+            checkoutUrl
+              ? `<p>✓ Stripe Checkout sent. Waiting on payment.</p>`
+              : `<p><strong>⚠ Stripe not configured.</strong> Send them a manual checkout link.</p>`
+          }
+          <p><a href="${siteUrl()}/app/admin/hunters">View in admin →</a></p>
+          <p><small>Signup ID: ${inserted.id}.</small></p>
         `,
       });
     } catch (e) {
@@ -112,5 +171,5 @@ export async function submitHunterSignupAction(
     }
   }
 
-  return { success: true, id: inserted.id };
+  return { success: true, id: inserted.id, checkout_url: checkoutUrl };
 }

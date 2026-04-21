@@ -735,9 +735,15 @@ function SignupModal({
       const res = await submitHunterSignupAction(fd);
       if ("error" in res) {
         setError(res.error);
-      } else {
-        setSuccess(true);
+        return;
       }
+      // If Stripe is configured, redirect to Checkout. Otherwise show the
+      // "check your email" success state.
+      if (res.checkout_url) {
+        window.location.href = res.checkout_url;
+        return;
+      }
+      setSuccess(true);
     });
   }
 
