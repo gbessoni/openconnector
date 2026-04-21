@@ -14,10 +14,9 @@ export function getStripe(): Stripe {
 
 export const HUNTER_PRICE_ID = process.env.STRIPE_HUNTER_PRICE_ID || "";
 
-// Convenience: production base URL for redirect URLs
+// Canonical production URL for emails, redirects, etc.
+// NEVER use VERCEL_URL here — that resolves to preview-specific URLs like
+// superconnector-abc123.vercel.app which aren't the public alias.
 export function siteUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const v = process.env.VERCEL_URL;
-  if (v) return v.startsWith("http") ? v : `https://${v}`;
-  return "https://www.leapify.xyz";
+  return process.env.NEXT_PUBLIC_SITE_URL || "https://www.leapify.xyz";
 }
