@@ -53,11 +53,13 @@ export default async function AdminHuntersPage() {
     total: hunters.length,
     active: hunters.filter((h) => h.status === "active").length,
     paid: hunters.filter((h) => h.status === "paid").length,
-    pending: hunters.filter((h) => h.status === "pending" || h.status === "checkout_sent").length,
     cancelled: hunters.filter((h) => h.status === "cancelled" || h.status === "refunded").length,
+    last7d: hunters.filter(
+      (h) =>
+        new Date(h.created_at).getTime() >
+        Date.now() - 7 * 24 * 60 * 60 * 1000
+    ).length,
   };
-
-  const mrr = hunters.filter((h) => h.status === "active").length * 49;
 
   return (
     <AppShell user={session}>
@@ -75,18 +77,20 @@ export default async function AdminHuntersPage() {
                 Hunter signups
               </h1>
               <p className="text-sm text-gray-500 mt-1 max-w-2xl">
-                Everyone who signed up for the $49/mo Hunter tier at{" "}
+                Everyone who signed up via{" "}
                 <a href="https://www.leapify.xyz/hunter" className="underline">
                   /hunter
                 </a>
-                . Status updates automatically via Stripe webhooks.
+                . Free tier — users can refer leads from their own network.
+                The $49/mo kicks in later if they upgrade to the in-app lead
+                finder.
               </p>
             </div>
             <div className="flex gap-2 text-xs">
-              <Stat label="Active MRR" count={`$${mrr}`} highlight />
+              <Stat label="Total" count={counts.total} highlight />
               <Stat label="Active" count={counts.active} />
-              <Stat label="Paid" count={counts.paid} />
-              <Stat label="Pending" count={counts.pending} />
+              <Stat label="Last 7 days" count={counts.last7d} />
+              <Stat label="Paid (upgrade)" count={counts.paid} />
               <Stat label="Cancelled" count={counts.cancelled} />
             </div>
           </div>
