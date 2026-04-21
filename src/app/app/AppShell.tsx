@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { logoutAction } from "./actions";
+import { getAdminNotificationCounts } from "./notifications";
 import type { SessionUser } from "@/lib/auth";
 
 export function AppShell({
@@ -13,10 +15,35 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [counts, setCounts] = useState<{
+    stackLeads: number;
+    hunters: number;
+    applications: number;
+  } | null>(null);
+
+  // Fetch admin notification counts on mount + when route changes
+  useEffect(() => {
+    if (user.role !== "admin") return;
+    let cancelled = false;
+    getAdminNotificationCounts().then((c) => {
+      if (!cancelled) setCounts(c);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.role, pathname]);
+
   const isActive = (path: string) =>
     path === "/app" ? pathname === "/app" : pathname?.startsWith(path);
 
-  const navItems = [
+  interface NavItem {
+    href: string;
+    label: string;
+    icon: string;
+    badgeKey?: "stackLeads" | "hunters" | "applications";
+  }
+
+  const navItems: NavItem[] = [
     { href: "/app", label: "My Leads", icon: "📋" },
     { href: "/app/companies", label: "Companies", icon: "🏢" },
     { href: "/app/leads/new", label: "Add Lead", icon: "＋" },
@@ -24,10 +51,29 @@ export function AppShell({
   ];
   if (user.role === "admin") {
     navItems.push({ href: "/app/admin", label: "Admin", icon: "⚙️" });
-    navItems.push({ href: "/app/admin/stack", label: "Stack Leads", icon: "🎯" });
-    navItems.push({ href: "/app/admin/hunters", label: "Hunters", icon: "🏹" });
-    navItems.push({ href: "/app/admin/applications", label: "Applications", icon: "👋" });
-    navItems.push({ href: "/app/admin/messages", label: "Recruit Messages", icon: "💬" });
+    navItems.push({
+      href: "/app/admin/stack",
+      label: "Stack Leads",
+      icon: "🎯",
+      badgeKey: "stackLeads",
+    });
+    navItems.push({
+      href: "/app/admin/hunters",
+      label: "Hunters",
+      icon: "🏹",
+      badgeKey: "hunters",
+    });
+    navItems.push({
+      href: "/app/admin/applications",
+      label: "Applications",
+      icon: "👋",
+      badgeKey: "applications",
+    });
+    navItems.push({
+      href: "/app/admin/messages",
+      label: "Recruit Messages",
+      icon: "💬",
+    });
   }
 
   return (
@@ -42,20 +88,35 @@ export function AppShell({
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const badge = item.badgeKey && counts ? counts[item.badgeKey] : 0;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <span className="text-base">{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                {badge > 0 && (
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
+                      active
+                        ? "bg-white text-gray-900"
+                        : "bg-red-500 text-white"
+                    }`}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User footer — always visible */}

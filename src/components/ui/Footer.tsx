@@ -34,6 +34,15 @@ export function Footer() {
               <Link href="/about" className="hover:text-accent transition-colors">
                 About
               </Link>
+              <Link href="/stack" className="hover:text-accent transition-colors">
+                Stack (vendor match)
+              </Link>
+              <Link href="/find-leads" className="hover:text-accent transition-colors">
+                Find Leads
+              </Link>
+              <Link href="/hunter" className="hover:text-accent transition-colors">
+                Hunter ($49/mo)
+              </Link>
               <Link href="/referral_connector.html" className="hover:text-accent transition-colors">
                 Referral Partner
               </Link>
