@@ -86,7 +86,8 @@ export function QualificationForm({
       if (!form.industry) return "Select an industry.";
     }
     if (s === 3) {
-      if (!form.searched_vendor.trim())
+      // Only validate vendor when user is actually filling it in (not prefilled)
+      if (!prefilledVendor && !form.searched_vendor.trim())
         return "Which vendor were you searching for?";
       if (!form.problem.trim() || form.problem.trim().length < 10)
         return "Add a sentence or two about what problem you're solving.";
@@ -246,14 +247,24 @@ export function QualificationForm({
 
         {step === 3 && (
           <>
-            <Field
-              label="Which vendor were you searching for?"
-              required
-              placeholder="e.g. Rippling, Gorgias, Carta..."
-              value={form.searched_vendor}
-              onChange={(v) => update("searched_vendor", v)}
-              autoFocus
-            />
+            {prefilledVendor ? (
+              <div className="bg-[#5B4FE8]/10 border border-[#5B4FE8]/30 rounded-lg px-4 py-3 text-sm text-white/80">
+                Looking for alternatives to{" "}
+                <span className="font-semibold text-[#5B4FE8]">
+                  {prefilledVendor}
+                </span>
+                . We&apos;ll match you to 3 vendors our network stands behind.
+              </div>
+            ) : (
+              <Field
+                label="Which vendor were you searching for?"
+                required
+                placeholder="e.g. Rippling, Gorgias, Carta..."
+                value={form.searched_vendor}
+                onChange={(v) => update("searched_vendor", v)}
+                autoFocus
+              />
+            )}
             <Textarea
               label="What problem are you trying to solve?"
               required
@@ -263,6 +274,7 @@ export function QualificationForm({
               onChange={(v) => update("problem", v)}
               hint={`${form.problem.length} / 600`}
               maxLength={600}
+              autoFocus={!!prefilledVendor}
             />
           </>
         )}
@@ -357,6 +369,7 @@ function Textarea({
   onChange,
   hint,
   maxLength,
+  autoFocus,
 }: {
   label: string;
   required?: boolean;
@@ -366,6 +379,7 @@ function Textarea({
   onChange: (v: string) => void;
   hint?: string;
   maxLength?: number;
+  autoFocus?: boolean;
 }) {
   return (
     <div>
@@ -382,6 +396,7 @@ function Textarea({
         required={required}
         placeholder={placeholder}
         maxLength={maxLength}
+        autoFocus={autoFocus}
         className="w-full bg-[#0a0a0a] border border-white/15 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#5B4FE8] focus:ring-2 focus:ring-[#5B4FE8]/20 transition-colors resize-y"
       />
     </div>
