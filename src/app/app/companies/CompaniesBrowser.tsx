@@ -6,6 +6,14 @@ import { formatPayout, type Vendor } from "@/lib/leads";
 
 const NEW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
+function parseIndustries(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export function CompaniesBrowser({
   vendors,
   isAdmin,
@@ -17,6 +25,7 @@ export function CompaniesBrowser({
 }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeTarget, setActiveTarget] = useState<string | null>(null);
 
   const categories = useMemo(
     () =>
@@ -26,10 +35,30 @@ export function CompaniesBrowser({
     [vendors]
   );
 
+  // Collect every distinct "Looking for customers in" value across the DB
+  const targetIndustries = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const v of vendors) {
+      for (const t of parseIndustries(v.target_industries)) {
+        counts.set(t, (counts.get(t) ?? 0) + 1);
+      }
+    }
+    // Sort by count desc, then alpha
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([label, count]) => ({ label, count }));
+  }, [vendors]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return vendors.filter((v) => {
       if (activeCategory && v.category !== activeCategory) return false;
+      if (activeTarget) {
+        const list = parseIndustries(v.target_industries).map((s) =>
+          s.toLowerCase()
+        );
+        if (!list.includes(activeTarget.toLowerCase())) return false;
+      }
       if (!q) return true;
       const hay = [
         v.name,
@@ -42,7 +71,7 @@ export function CompaniesBrowser({
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [vendors, search, activeCategory]);
+  }, [vendors, search, activeCategory, activeTarget]);
 
   const now = Date.now();
 
@@ -82,57 +111,133 @@ export function CompaniesBrowser({
         )}
       </div>
 
-      {/* Category chips */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        <button
-          type="button"
-          onClick={() => setActiveCategory(null)}
-          className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-            activeCategory === null
-              ? "bg-gray-900 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          All
-        </button>
-        {categories.map((cat) => (
+      {/* "Looking for customers in" (target industries) */}
+      <div className="mb-4">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
+          Looking for customers in
+        </div>
+        <div className="flex flex-wrap gap-2">
           <button
-            key={cat}
             type="button"
-            onClick={() =>
-              setActiveCategory(activeCategory === cat ? null : cat)
-            }
+            onClick={() => setActiveTarget(null)}
             className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-              activeCategory === cat
+              activeTarget === null
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Any
+          </button>
+          {targetIndustries.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() =>
+                setActiveTarget(activeTarget === t.label ? null : t.label)
+              }
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                activeTarget === t.label
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {t.label}
+              <span
+                className={`text-[10px] ${
+                  activeTarget === t.label ? "text-white/70" : "text-gray-500"
+                }`}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Category chips */}
+      <div className="mb-5">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
+          Category
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(null)}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              activeCategory === null
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            {cat}
+            All
           </button>
-        ))}
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() =>
+                setActiveCategory(activeCategory === cat ? null : cat)
+              }
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                activeCategory === cat
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Result meta */}
-      <div className="text-xs text-gray-500 mb-3">
-        Showing <span className="font-medium text-gray-700">{filtered.length}</span>{" "}
-        of {vendors.length}
-        {activeCategory && (
-          <>
-            {" "}in <span className="font-medium text-gray-700">{activeCategory}</span>
-          </>
+      <div className="text-xs text-gray-500 mb-3 flex items-center gap-3 flex-wrap">
+        <span>
+          Showing{" "}
+          <span className="font-medium text-gray-700">{filtered.length}</span>{" "}
+          of {vendors.length}
+        </span>
+        {(activeCategory || activeTarget || search) && (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCategory(null);
+              setActiveTarget(null);
+              setSearch("");
+            }}
+            className="text-indigo-600 hover:underline"
+          >
+            Clear all filters
+          </button>
         )}
-        {search && (
-          <>
-            {" "}for &ldquo;<span className="font-medium text-gray-700">{search}</span>&rdquo;
-          </>
+        {activeCategory && (
+          <span className="bg-gray-900 text-white rounded px-2 py-0.5">
+            category: {activeCategory}
+            <button
+              onClick={() => setActiveCategory(null)}
+              className="ml-1.5 text-white/70 hover:text-white"
+            >
+              ✕
+            </button>
+          </span>
+        )}
+        {activeTarget && (
+          <span className="bg-indigo-600 text-white rounded px-2 py-0.5">
+            looking for: {activeTarget}
+            <button
+              onClick={() => setActiveTarget(null)}
+              className="ml-1.5 text-white/70 hover:text-white"
+            >
+              ✕
+            </button>
+          </span>
         )}
       </div>
 
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-sm text-gray-500">
-          No matches. Try a different search or clear the filter.
+          No matches. Try a different search or clear the filters.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -146,6 +251,7 @@ export function CompaniesBrowser({
 
             const createdMs = new Date(v.created_at).getTime();
             const isNew = now - createdMs < NEW_WINDOW_MS;
+            const vendorTargets = parseIndustries(v.target_industries);
 
             return (
               <Link
@@ -194,7 +300,6 @@ export function CompaniesBrowser({
                     </div>
                   )}
                 </div>
-                {/* If we stole the top right corner for "New", show payout below */}
                 {isNew && (
                   <div className="mb-3">
                     <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">
@@ -213,16 +318,35 @@ export function CompaniesBrowser({
                 <p className="text-sm text-gray-600 line-clamp-3">
                   {v.description}
                 </p>
-                {v.target_industries && (
+
+                {vendorTargets.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">
-                      Target:
-                    </span>{" "}
-                    <span className="text-xs text-gray-600">
-                      {v.target_industries}
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium block mb-1.5">
+                      Looking for customers in
                     </span>
+                    <div className="flex flex-wrap gap-1">
+                      {vendorTargets.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveTarget(activeTarget === t ? null : t);
+                          }}
+                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors ${
+                            activeTarget === t
+                              ? "bg-indigo-600 text-white"
+                              : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
+
                 {v.country && (
                   <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
                     <svg
