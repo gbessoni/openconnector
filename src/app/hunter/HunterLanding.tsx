@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { submitHunterSignupAction } from "./actions";
-import { trackHunterSignup } from "@/lib/track";
+import { trackHunterSignup, getFbp } from "@/lib/track";
+import { ViewContentFire } from "./ViewContentFire";
 
 interface UTMBundle {
   utm_source?: string;
@@ -50,6 +51,7 @@ export function HunterLanding({
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
       />
 
+      <ViewContentFire />
       <Hero onCTA={openSignup} />
       <Pitch />
       <Features />
@@ -732,13 +734,24 @@ function SignupModal({
       if (utm.utm_content) fd.set("utm_content", utm.utm_content);
       if (utm.utm_term) fd.set("utm_term", utm.utm_term);
       if (utm.referrer) fd.set("referrer", utm.referrer);
+      // Read _fbp cookie + stored click IDs so server can fire CAPI
+      const fbp = getFbp();
+      if (fbp) fd.set("fbp", fbp);
+      try {
+        const raw = localStorage.getItem("leapify_click_id");
+        if (raw) {
+          const stored = JSON.parse(raw) as { fbclid?: string; gclid?: string };
+          if (stored.fbclid) fd.set("fbclid", stored.fbclid);
+          if (stored.gclid) fd.set("gclid", stored.gclid);
+        }
+      } catch {}
 
       const res = await submitHunterSignupAction(fd);
       if ("error" in res) {
         setError(res.error);
         return;
       }
-      // Fire Google Ads conversion before showing success screen
+      // Fire client-side conversions (Google Ads + Meta Lead, both deduped by ID)
       const [firstName, ...rest] = form.name.trim().split(/\s+/);
       trackHunterSignup({
         signupId: res.id,

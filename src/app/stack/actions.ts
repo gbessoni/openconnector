@@ -1,9 +1,46 @@
 "use server";
 
+import { headers } from "next/headers";
 import { query, queryOne } from "@/lib/db";
 import { generateMatchReasons, type LeadContext } from "@/lib/anthropic";
+import { sendCAPIEvent } from "@/lib/meta-capi";
 import type { Vendor } from "@/lib/leads";
 import vendorMatches from "@/data/vendor-matches.json";
+
+async function fireStackLeadCAPI(
+  leadId: number,
+  email: string,
+  fullName: string,
+  formData: FormData
+): Promise<void> {
+  try {
+    const h = await headers();
+    const clientIp =
+      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      h.get("x-real-ip") ||
+      undefined;
+    const userAgent = h.get("user-agent") || undefined;
+    const fbclid = String(formData.get("fbclid") || "") || undefined;
+    const fbp = String(formData.get("fbp") || "") || undefined;
+    const [firstName, ...rest] = fullName.trim().split(/\s+/);
+    await sendCAPIEvent({
+      eventName: "Lead",
+      eventId: String(leadId),
+      email,
+      firstName,
+      lastName: rest.join(" ") || undefined,
+      fbclid,
+      fbp,
+      clientIp,
+      userAgent,
+      eventSourceUrl: "https://www.leapify.xyz/stack",
+      value: 50,
+      currency: "USD",
+    });
+  } catch (e) {
+    console.error("CAPI Lead failed (stack)", e);
+  }
+}
 
 export interface StackLeadFormData {
   name: string;
@@ -192,6 +229,8 @@ export async function submitStackLeadNLAction(
   );
   if (!inserted) return { error: "Couldn't save lead. Try again." };
 
+  await fireStackLeadCAPI(inserted.id, lead.email, lead.name, formData);
+
   const matches: MatchedVendor[] = ordered.map((v, i) => ({
     slug: v.slug,
     name: v.name,
@@ -328,6 +367,8 @@ export async function submitStackLeadAction(
   if (!inserted) {
     return { error: "Couldn't save lead. Try again." };
   }
+
+  await fireStackLeadCAPI(inserted.id, lead.email, lead.name, formData);
 
   const matches: MatchedVendor[] = ordered.map((v, i) => ({
     slug: v.slug,

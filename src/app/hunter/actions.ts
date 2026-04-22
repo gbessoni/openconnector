@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { query, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { getStripe, HUNTER_PRICE_ID, siteUrl } from "@/lib/stripe";
+import { sendCAPIEvent } from "@/lib/meta-capi";
 
 function randomPassword(len = 12): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
@@ -129,6 +131,36 @@ export async function submitHunterSignupAction(
     await sendHunterWelcomeEmail(inserted.id, tempPassword);
   } catch (e) {
     console.error("Failed to send hunter welcome email", e);
+  }
+
+  // Fire Meta CAPI Lead event (server-side — no-ops if token missing)
+  try {
+    const h = await headers();
+    const clientIp =
+      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      h.get("x-real-ip") ||
+      undefined;
+    const userAgent = h.get("user-agent") || undefined;
+    const fbclid = String(formData.get("fbclid") || "") || undefined;
+    const fbp = String(formData.get("fbp") || "") || undefined;
+
+    const [firstName, ...rest] = payload.name.trim().split(/\s+/);
+    await sendCAPIEvent({
+      eventName: "Lead",
+      eventId: String(inserted.id), // must match client-side fbq eventID
+      email: emailLower,
+      firstName,
+      lastName: rest.join(" ") || undefined,
+      fbclid,
+      fbp,
+      clientIp,
+      userAgent,
+      eventSourceUrl: `${siteUrl()}/hunter`,
+      value: 49,
+      currency: "USD",
+    });
+  } catch (e) {
+    console.error("CAPI Lead failed (hunter signup)", e);
   }
 
   // Email Greg

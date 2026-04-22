@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
-import { trackStackLead } from "@/lib/track";
+import { trackStackLead, getFbp } from "@/lib/track";
 
 interface FormState {
   name: string;
@@ -140,6 +140,9 @@ export function QualificationForm({
         if (utm.fbclid) fd.append("fbclid", utm.fbclid);
         if (utm.landing_path) fd.append("landing_path", utm.landing_path);
       }
+      // _fbp cookie for Meta CAPI server-side matching
+      const fbp = getFbp();
+      if (fbp) fd.append("fbp", fbp);
       const res = await submitStackLeadAction(fd);
       if ("error" in res) {
         setError(res.error);

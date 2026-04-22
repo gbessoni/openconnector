@@ -99,14 +99,57 @@ export function trackConversion(args: ConversionArgs): void {
     if (process.env.NODE_ENV !== "production") console.warn("trackConversion (ga4)", e);
   }
 
-  // Meta Pixel Lead event
+  // Meta Pixel Lead event — pass eventID for CAPI dedup
   try {
     if (window.fbq && process.env.NEXT_PUBLIC_META_PIXEL_ID) {
-      window.fbq("track", "Lead", { value, currency });
+      const fbParams: Record<string, unknown> = { value, currency };
+      if (transactionId) fbParams.content_ids = [String(transactionId)];
+      if (transactionId) {
+        window.fbq(
+          "track",
+          "Lead",
+          fbParams,
+          { eventID: String(transactionId) }
+        );
+      } else {
+        window.fbq("track", "Lead", fbParams);
+      }
     }
   } catch (e) {
     if (process.env.NODE_ENV !== "production") console.warn("trackConversion (fb)", e);
   }
+}
+
+// Fire a ViewContent event on specific landing pages (e.g. /hunter).
+// Called from a client component on mount — avoids duplicating init.
+export function trackViewContent(args: {
+  contentName: string;
+  contentCategory?: string;
+  value?: number;
+  currency?: string;
+}): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (window.fbq && process.env.NEXT_PUBLIC_META_PIXEL_ID) {
+      window.fbq("track", "ViewContent", {
+        content_name: args.contentName,
+        content_category: args.contentCategory,
+        value: args.value,
+        currency: args.currency,
+      });
+    }
+  } catch (e) {
+    if (process.env.NODE_ENV !== "production") console.warn("trackViewContent", e);
+  }
+}
+
+// Helper for components that need the _fbp cookie to pass to server CAPI.
+export function getFbp(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const m = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith("_fbp="));
+  return m?.split("=")[1];
 }
 
 // ─── Convenience wrappers for our two configured conversions ───

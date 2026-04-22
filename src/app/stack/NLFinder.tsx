@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitStackLeadNLAction, type MatchedVendor } from "./actions";
 import type { UTMBundle } from "./StackExperience";
-import { trackStackLead } from "@/lib/track";
+import { trackStackLead, getFbp } from "@/lib/track";
 
 const EXAMPLES = [
   "20-person B2B SaaS, Series A, need banking + payroll + sales tax",
@@ -72,6 +72,9 @@ export function NLFinder({
         if (utm.fbclid) fd.set("fbclid", utm.fbclid);
         if (utm.landing_path) fd.set("landing_path", utm.landing_path);
       }
+      // _fbp cookie for Meta CAPI server-side matching
+      const fbp = getFbp();
+      if (fbp) fd.set("fbp", fbp);
       const res = await submitStackLeadNLAction(fd);
       if ("error" in res) {
         setError(res.error);

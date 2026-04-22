@@ -64,8 +64,11 @@ export function CompaniesBrowser({
         v.name,
         v.category ?? "",
         v.description ?? "",
+        v.long_description ?? "",
         v.target_industries ?? "",
         v.icp ?? "",
+        v.icp_bullets ?? "",
+        v.primary_buyer ?? "",
       ]
         .join(" ")
         .toLowerCase();
@@ -97,7 +100,7 @@ export function CompaniesBrowser({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, category, ICP, or keyword..."
+          placeholder='Search by name, title, keyword (e.g. "CFO", "fractional", "ecommerce")...'
           className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
         />
         {search && (
